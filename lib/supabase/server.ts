@@ -1,5 +1,5 @@
 // lib/supabase/server.ts
-// Use in Server Components, API routes, and middleware
+// Use in Server Components and API routes only (NOT middleware — middleware needs NextRequest/NextResponse cookies)
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
