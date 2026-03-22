@@ -1,4 +1,5 @@
 // components/ui/PlanCard.tsx
+'use client'
 import GlowButton from './GlowButton'
 
 interface PlanFeature { text: string; included: boolean }
@@ -38,7 +39,7 @@ export default function PlanCard({
       </div>
       <ul className="flex flex-col gap-3 flex-1">
         {features.map((f, i) => (
-          <li key={i} className="flex items-center gap-2 text-sm">
+          <li key={f.text} className="flex items-center gap-2 text-sm">
             <span className={f.included ? 'text-violet-light' : 'text-muted'}>
               {f.included ? '✓' : '○'}
             </span>

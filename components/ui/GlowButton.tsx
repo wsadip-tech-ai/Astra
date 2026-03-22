@@ -22,17 +22,30 @@ export default function GlowButton({
   }
   const classes = `${base} ${variants[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`
 
-  const inner = (
-    <motion.span
+  if (href) {
+    return (
+      <Link href={href}>
+        <motion.span
+          whileHover={disabled ? {} : { scale: 1.02 }}
+          whileTap={disabled ? {} : { scale: 0.98 }}
+          className={classes}
+        >
+          {children}
+        </motion.span>
+      </Link>
+    )
+  }
+
+  return (
+    <motion.button
+      type="button"
       whileHover={disabled ? {} : { scale: 1.02 }}
       whileTap={disabled ? {} : { scale: 0.98 }}
       className={classes}
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
     >
       {children}
-    </motion.span>
+    </motion.button>
   )
-
-  if (href) return <Link href={href}>{inner}</Link>
-  return inner
 }

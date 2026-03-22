@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 
 interface Star {
-  x: number; y: number; r: number; opacity: number; speed: number
+  x: number; y: number; r: number; opacity: number
 }
 
 export default function StarField({ className = '' }: { className?: string }) {
@@ -27,7 +27,6 @@ export default function StarField({ className = '' }: { className?: string }) {
       y: Math.random() * canvas.height,
       r: Math.random() * 1.5 + 0.3,
       opacity: Math.random() * 0.7 + 0.3,
-      speed: Math.random() * 0.3 + 0.05,
     }))
 
     let animId: number
@@ -56,6 +55,7 @@ export default function StarField({ className = '' }: { className?: string }) {
     <canvas
       ref={canvasRef}
       className={`absolute inset-0 w-full h-full pointer-events-none ${className}`}
+      aria-hidden="true"
     />
   )
 }
