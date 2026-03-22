@@ -18,28 +18,47 @@ export default function AccountForm() {
     setError(null)
     setLoading(true)
 
-    const res = await fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
-    })
-    const data = await res.json()
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      })
+      const data = await res.json()
 
-    if (!res.ok) {
-      setError(data.error)
+      if (!res.ok) {
+        setError(data.error)
+        setLoading(false)
+        return
+      }
+
+      // Sign in immediately so the user has a session on the onboarding page
+      const supabase = createClient()
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      if (signInError) {
+        setError('Account created — please check your email to confirm, then sign in.')
+        setLoading(false)
+        return
+      }
+
+      router.push('/signup/onboarding')
+      router.refresh()
+    } catch {
+      setError('Something went wrong. Please try again.')
       setLoading(false)
-      return
     }
-
-    router.push('/signup/onboarding')
   }
 
   async function handleGoogle() {
-    const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=/signup/onboarding` },
-    })
+    try {
+      const supabase = createClient()
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/auth/callback?next=/signup/onboarding` },
+      })
+    } catch {
+      setError('Could not connect to Google. Please try again.')
+    }
   }
 
   return (
