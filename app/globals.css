@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-playfair);
+  }
+}
