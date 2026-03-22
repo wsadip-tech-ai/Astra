@@ -30,8 +30,8 @@ export default function Testimonials() {
           </h2>
         </div>
         <div className="grid md:grid-cols-3 gap-6">
-          {testimonials.map((t, i) => (
-            <div key={i} className="bg-cosmos border border-white/5 rounded-2xl p-8">
+          {testimonials.map((t) => (
+            <div key={t.name} className="bg-cosmos border border-white/5 rounded-2xl p-8">
               <div className="text-3xl mb-4">{t.avatar}</div>
               <p className="text-muted text-sm leading-relaxed mb-6 italic">"{t.quote}"</p>
               <div>
