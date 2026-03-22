@@ -41,4 +41,12 @@ create policy "Users can view own profile"
 
 create policy "Users can update own profile"
   on public.profiles for update
-  using (auth.uid() = id);
+  using (auth.uid() = id)
+  with check (
+    auth.uid() = id
+    and is_admin = false
+    and subscription_tier = (select subscription_tier from public.profiles where id = auth.uid())
+    and stripe_customer_id is not distinct from (select stripe_customer_id from public.profiles where id = auth.uid())
+    and daily_message_count = (select daily_message_count from public.profiles where id = auth.uid())
+    and daily_reset_at = (select daily_reset_at from public.profiles where id = auth.uid())
+  );

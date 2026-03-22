@@ -9,10 +9,13 @@ create table if not exists public.horoscopes (
   lucky_number int,
   lucky_color text,
   created_at timestamptz not null default now(),
-  unique(sign, date)
+  unique(sign, date),
+  constraint valid_sign check (sign in ('aries','taurus','gemini','cancer','leo','virgo',
+                                        'libra','scorpio','sagittarius','capricorn','aquarius','pisces'))
 );
 
 -- Public read access (horoscopes are public content)
+-- Write access is restricted to service_role only
 alter table public.horoscopes enable row level security;
 
 create policy "Horoscopes are publicly readable"

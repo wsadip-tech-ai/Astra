@@ -7,8 +7,8 @@ create table if not exists public.birth_charts (
   date_of_birth date not null,
   time_of_birth time,
   place_of_birth text not null,
-  latitude float not null,
-  longitude float not null,
+  latitude double precision not null,
+  longitude double precision not null,
   timezone text not null,
   western_chart_json jsonb,
   vedic_chart_json jsonb,
@@ -19,4 +19,7 @@ alter table public.birth_charts enable row level security;
 
 create policy "Users can manage own charts"
   on public.birth_charts for all
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create index if not exists birth_charts_user_id_idx on public.birth_charts(user_id);
