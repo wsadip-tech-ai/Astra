@@ -449,6 +449,53 @@ OPENAI_API_KEY=        # for text-embedding-3-small
 
 ---
 
+### Knowledge Base — Personalised Content Display
+
+Beyond powering Astra's chat responses, the uploaded knowledge base also drives **personalised insight cards** shown throughout the app whenever a user has a birth chart.
+
+**How it works:**
+After a user provides their birth date, time, and place, the system generates a set of "insight queries" derived from their chart — then retrieves relevant knowledge chunks for each and renders them as readable content sections.
+
+**Chart-derived queries (generated automatically from `western_chart_json` / `vedic_chart_json`):**
+```
+"Sun in Taurus meaning and traits"
+"Moon in Scorpio emotional nature"
+"Ascendant Libra personality"
+"Saturn in 8th house career challenges"
+"Anuradha nakshatra characteristics"
+"Kanya lagna vedic astrology"
+```
+Each query is embedded → top 3 chunks retrieved → Claude rewrites into a clean, personalised paragraph addressed directly to the user.
+
+**Where personalised knowledge cards appear:**
+
+| Page | Content Shown |
+|------|--------------|
+| `/dashboard` | "Your Cosmic Profile" section — 3–4 insight cards: Sun sign deep dive, Moon sign emotional nature, Rising sign personality, current Dasha period (Vedic) |
+| `/chart` | Per-planet interpretation panels — click any planet on the chart wheel to see a knowledge-powered interpretation |
+| `/chart` (Vedic tab) | Nakshatra description, Lagna meaning, active Dasha interpretation |
+| Post-signup onboarding | Welcome screen: "Here's what the stars say about you" — 2 quick insights from the knowledge base to hook the user immediately |
+
+**Rendering pipeline (BFF `GET /api/insights`):**
+1. Fetch user's `birth_charts` row
+2. Build 4–6 insight queries from chart data
+3. For each query: embed → vector search → retrieve top 3 chunks
+4. Send chunks + chart data to Claude: "Rewrite this astrological knowledge as a personalised insight for {name}, born {date} in {place}. Keep it warm, 3–4 sentences."
+5. Return array of `{ title, body, planet, sign }` insight objects
+6. Cache in Supabase `user_insights` table (invalidate when chart changes or new documents are uploaded)
+
+**`user_insights` table:**
+| Column | Type | Notes |
+|--------|------|-------|
+| id | uuid PK | |
+| user_id | uuid FK → profiles.id | ON DELETE CASCADE |
+| chart_id | uuid FK → birth_charts.id | |
+| insights | jsonb | [{title, body, planet, sign, query}] |
+| generated_at | timestamp | |
+| expires_at | timestamp | 7 days after generated |
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
