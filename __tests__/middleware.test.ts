@@ -1,8 +1,7 @@
 // __tests__/middleware.test.ts
-import { describe, it, expect, vi } from 'vitest'
-import { NextRequest } from 'next/server'
+import { describe, it, expect } from 'vitest'
+import { isProtectedRoute, isPremiumRoute } from '@/middleware'
 
-// We test the route-matching logic independently of Supabase
 describe('middleware route matching', () => {
   it('allows public routes without auth check', () => {
     const publicRoutes = ['/', '/horoscope/aries', '/pricing', '/login', '/signup']
@@ -20,13 +19,3 @@ describe('middleware route matching', () => {
     })
   })
 })
-
-// These helpers will be exported from middleware.ts
-function isProtectedRoute(pathname: string): boolean {
-  const protected_ = ['/dashboard', '/chart', '/chat', '/compatibility', '/transit', '/yearly']
-  return protected_.some(r => pathname.startsWith(r))
-}
-
-function isPremiumRoute(pathname: string): boolean {
-  return pathname.startsWith('/transit') || pathname.startsWith('/yearly')
-}

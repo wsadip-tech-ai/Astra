@@ -42,7 +42,11 @@ export async function middleware(request: NextRequest) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
     loginUrl.searchParams.set('next', pathname)
-    return NextResponse.redirect(loginUrl)
+    const redirectResponse = NextResponse.redirect(loginUrl)
+    response.cookies.getAll().forEach(cookie =>
+      redirectResponse.cookies.set(cookie.name, cookie.value)
+    )
+    return redirectResponse
   }
 
   // Redirect free-tier users away from premium routes
@@ -56,7 +60,11 @@ export async function middleware(request: NextRequest) {
     if (profile?.subscription_tier !== 'premium') {
       const pricingUrl = request.nextUrl.clone()
       pricingUrl.pathname = '/pricing'
-      return NextResponse.redirect(pricingUrl)
+      const redirectResponse = NextResponse.redirect(pricingUrl)
+      response.cookies.getAll().forEach(cookie =>
+        redirectResponse.cookies.set(cookie.name, cookie.value)
+      )
+      return redirectResponse
     }
   }
 
