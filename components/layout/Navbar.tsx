@@ -1,7 +1,7 @@
 // components/layout/Navbar.tsx
 'use client'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import GlowButton from '@/components/ui/GlowButton'
@@ -13,7 +13,7 @@ interface NavbarProps {
 export default function Navbar({ isAuthed = false }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -68,6 +68,7 @@ export default function Navbar({ isAuthed = false }: NavbarProps) {
           className="md:hidden text-muted p-2"
           onClick={() => setMenuOpen(!menuOpen)}
           aria-label="Toggle menu"
+          aria-expanded={menuOpen}
         >
           {menuOpen ? '✕' : '☰'}
         </button>
@@ -79,10 +80,14 @@ export default function Navbar({ isAuthed = false }: NavbarProps) {
           <Link href="/horoscope/aries" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Daily Horoscope</Link>
           <Link href="/astrologer" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Meet Astra</Link>
           <Link href="/pricing" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Pricing</Link>
-          {isAuthed
-            ? <button onClick={handleSignOut} className="text-muted hover:text-star text-sm text-left">Sign out</button>
-            : <Link href="/signup" className="text-violet-light text-sm font-semibold" onClick={() => setMenuOpen(false)}>Get Started →</Link>
-          }
+          {isAuthed ? (
+            <>
+              <Link href="/dashboard" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Dashboard</Link>
+              <button onClick={handleSignOut} className="text-muted hover:text-star text-sm text-left">Sign out</button>
+            </>
+          ) : (
+            <Link href="/signup" className="text-violet-light text-sm font-semibold" onClick={() => setMenuOpen(false)}>Get Started →</Link>
+          )}
         </div>
       )}
     </nav>

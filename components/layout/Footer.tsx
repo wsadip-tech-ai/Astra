@@ -15,9 +15,14 @@ export default function Footer() {
         <div>
           <h4 className="text-star text-sm font-semibold mb-3">Explore</h4>
           <ul className="flex flex-col gap-2">
-            {['Daily Horoscope', 'Meet Astra', 'Birth Chart', 'Compatibility'].map(item => (
-              <li key={item}>
-                <Link href="#" className="text-muted hover:text-star text-sm transition-colors">{item}</Link>
+            {[
+              ['Daily Horoscope', '/horoscope/aries'],
+              ['Meet Astra', '/astrologer'],
+              ['Birth Chart', '/chart'],
+              ['Compatibility', '/compatibility'],
+            ].map(([label, href]) => (
+              <li key={label}>
+                <Link href={href} className="text-muted hover:text-star text-sm transition-colors">{label}</Link>
               </li>
             ))}
           </ul>
