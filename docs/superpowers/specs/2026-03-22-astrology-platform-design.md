@@ -402,12 +402,30 @@ Admins upload astrology documents (PDFs, text) to expand Astra's knowledge. Uses
 - Delete documents
 - View document chunks + embeddings status
 
-**How RAG works:**
+**LLM-first, RAG as specialist supplement:**
+Claude has strong built-in astrology knowledge and handles the majority of questions natively. RAG is NOT used on every query — it activates only when specialised knowledge is likely needed.
+
+**When RAG activates (similarity threshold: cosine score > 0.75):**
+- Specific remedies (gemstones, mantras, yantras, rituals)
+- References to specific shastra texts (Brihat Parashara Hora Shastra, etc.)
+- Detailed Nakshatra or Dasha-specific interpretations
+- Custom content uploaded by the admin (e.g. house-specific remedies)
+- Any query where the knowledge base returns high-confidence matches
+
+**When RAG does NOT activate (Claude answers from its own knowledge):**
+- General horoscope questions ("What does Moon in Scorpio mean?")
+- Personality traits, compatibility overviews
+- Daily/weekly forecasts
+- Relationship advice grounded in chart data
+- Most conversational questions
+
+**How it works:**
 1. Admin uploads a document → stored in Supabase Storage
 2. FastAPI background job: chunk document (500 tokens, 50 token overlap) → generate embeddings via OpenAI `text-embedding-3-small` → store in `document_chunks` table with `pgvector` extension
-3. On each chat message: embed the user's question → vector similarity search (`cosine distance`) → retrieve top 5 relevant chunks
-4. Inject retrieved chunks into Claude system prompt as "Astrology Reference Material"
-5. Astra's responses are now grounded in the uploaded knowledge
+3. On each chat message: embed the user's question → vector similarity search (cosine distance)
+4. If top result score > 0.75: inject top 3 chunks as "Specialist Reference" into Claude prompt
+5. If top result score ≤ 0.75: Claude answers entirely from its own knowledge — no RAG injection
+6. Claude is instructed: "If Specialist Reference is provided below, draw on it to enrich your answer. Otherwise use your own knowledge."
 
 **Data additions:**
 
@@ -478,11 +496,12 @@ Each query is embedded → top 3 chunks retrieved → Claude rewrites into a cle
 
 **Rendering pipeline (BFF `GET /api/insights`):**
 1. Fetch user's `birth_charts` row
-2. Build 4–6 insight queries from chart data
-3. For each query: embed → vector search → retrieve top 3 chunks
-4. Send chunks + chart data to Claude: "Rewrite this astrological knowledge as a personalised insight for {name}, born {date} in {place}. Keep it warm, 3–4 sentences."
-5. Return array of `{ title, body, planet, sign }` insight objects
-6. Cache in Supabase `user_insights` table (invalidate when chart changes or new documents are uploaded)
+2. Build 4–6 insight queries from chart data (e.g. "Sun in Taurus traits", "Moon in Scorpio emotional nature")
+3. For each query: Claude generates the insight from its own knowledge first
+4. In parallel: embed query → vector search → check similarity score
+5. If score > 0.75: append RAG chunks to Claude's context for that insight (e.g. specific remedies for that placement)
+6. Return array of `{ title, body, planet, sign, has_specialist_content }` insight objects
+7. Cache in `user_insights` table (invalidate when chart changes or new documents uploaded)
 
 **`user_insights` table:**
 | Column | Type | Notes |
