@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   try {
     geoResult = await geocodeCity(place_of_birth)
   } catch (err) {
-    if (err instanceof GeocodingError || (err instanceof Error && err.name === 'GeocodingError')) {
+    if (err instanceof GeocodingError) {
       return NextResponse.json({ error: (err as Error).message }, { status: 400 })
     }
     return NextResponse.json({ error: 'Geocoding service unavailable' }, { status: 503 })

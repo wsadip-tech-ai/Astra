@@ -1,13 +1,17 @@
 import { describe, it, expect, vi } from 'vitest'
 
+const MockGeocodingError = class GeocodingError extends Error {
+  constructor(message: string) { super(message); this.name = 'GeocodingError' }
+}
+
 vi.mock('@/lib/geocoding', () => ({
   geocodeCity: vi.fn(async (city: string) => {
     if (city === 'Kathmandu') {
       return { lat: 27.7172, lng: 85.324, timezone: 'Asia/Kathmandu', displayName: 'Kathmandu, Nepal' }
     }
-    throw Object.assign(new Error('City not found'), { name: 'GeocodingError' })
+    throw new MockGeocodingError('City not found')
   }),
-  GeocodingError: class GeocodingError extends Error {},
+  GeocodingError: MockGeocodingError,
 }))
 
 vi.mock('@/lib/supabase/server', () => ({

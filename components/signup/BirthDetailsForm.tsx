@@ -35,6 +35,7 @@ export default function BirthDetailsForm() {
         return
       }
 
+      setLoading(false)
       router.push('/dashboard')
       router.refresh()
     } catch {
