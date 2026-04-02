@@ -1,9 +1,12 @@
-// app/dashboard/page.tsx
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import GlowButton from '@/components/ui/GlowButton'
+import CosmicProfile from '@/components/dashboard/CosmicProfile'
+import CosmicWeather from '@/components/dashboard/CosmicWeather'
 import Link from 'next/link'
+import { MOCK_WESTERN_CHART, MOCK_COSMIC_WEATHER } from '@/constants/mock-chart'
+import type { WesternChartData } from '@/types'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -19,12 +22,15 @@ export default async function DashboardPage() {
 
   const { data: chart } = await supabase
     .from('birth_charts')
-    .select('id, place_of_birth, date_of_birth')
+    .select('id, place_of_birth, date_of_birth, western_chart_json')
     .eq('user_id', user.id)
     .limit(1)
-    .single()
+    .maybeSingle()
 
   const firstName = profile?.name?.split(' ')[0] ?? 'Seeker'
+  const chartData: WesternChartData | null = chart
+    ? ((chart.western_chart_json as WesternChartData) ?? MOCK_WESTERN_CHART)
+    : null
 
   return (
     <>
@@ -52,31 +58,40 @@ export default async function DashboardPage() {
             </div>
           )}
 
+          {/* Cosmic Profile — Big 3 summary (only if chart exists) */}
+          {chartData && <CosmicProfile chart={chartData} />}
+
+          {/* Today's Cosmic Weather — always shown */}
+          <CosmicWeather entries={MOCK_COSMIC_WEATHER} />
+
           {/* Feature cards */}
           <div className="grid md:grid-cols-3 gap-6">
             {[
               { icon: '🌙', title: 'My Birth Chart', desc: 'View your natal chart — Western and Vedic', href: '/chart', locked: !chart },
               { icon: '🎙️', title: 'Talk to Astra', desc: 'Ask anything by voice or text', href: '/chat', locked: !chart },
               { icon: '💫', title: 'Compatibility', desc: 'Check your compatibility with a partner', href: '/compatibility', locked: !chart },
-            ].map(card => (
-              <Link
+            ].map(card => card.locked ? (
+              <div
                 key={card.title}
-                href={card.locked ? '#' : card.href}
-                aria-disabled={card.locked}
-                className={`group bg-cosmos border rounded-2xl p-6 transition-all ${
-                  card.locked
-                    ? 'border-white/5 opacity-50 cursor-not-allowed'
-                    : 'border-white/10 hover:border-violet/30 hover:bg-violet/5'
-                }`}
+                aria-disabled="true"
+                className="bg-cosmos border border-white/5 rounded-2xl p-6 opacity-50 cursor-not-allowed"
               >
                 <div className="text-3xl mb-3">{card.icon}</div>
                 <h3 className="text-star font-semibold mb-1">{card.title}</h3>
                 <p className="text-muted text-sm">{card.desc}</p>
-                {!card.locked && (
-                  <span className="text-violet-light text-xs mt-3 block group-hover:translate-x-1 transition-transform">
-                    Open →
-                  </span>
-                )}
+              </div>
+            ) : (
+              <Link
+                key={card.title}
+                href={card.href}
+                className="group bg-cosmos border border-white/10 rounded-2xl p-6 transition-all hover:border-violet/30 hover:bg-violet/5"
+              >
+                <div className="text-3xl mb-3">{card.icon}</div>
+                <h3 className="text-star font-semibold mb-1">{card.title}</h3>
+                <p className="text-muted text-sm">{card.desc}</p>
+                <span className="text-violet-light text-xs mt-3 block group-hover:translate-x-1 transition-transform">
+                  Open →
+                </span>
               </Link>
             ))}
           </div>
