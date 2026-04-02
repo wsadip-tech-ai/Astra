@@ -18,7 +18,7 @@ export interface BirthChart {
   latitude: number
   longitude: number
   timezone: string
-  western_chart_json: Record<string, unknown> | null
+  western_chart_json: WesternChartData | null
   vedic_chart_json: Record<string, unknown> | null
   created_at: string
 }
@@ -31,4 +31,40 @@ export interface ZodiacSign {
   element: string
   rulingPlanet: string
   placeholderHoroscope: string
+}
+
+export interface Planet {
+  name: string
+  symbol: string
+  sign: string
+  degree: number
+  house: number
+  retrograde: boolean
+}
+
+export interface House {
+  number: number
+  sign: string
+  degree: number
+}
+
+export interface Aspect {
+  planet1: string
+  planet2: string
+  type: 'trine' | 'square' | 'conjunction' | 'opposition' | 'sextile'
+  orb: number
+}
+
+export interface WesternChartData {
+  summary: string
+  planets: Planet[]
+  houses: House[]
+  aspects: Aspect[]
+}
+
+export interface CosmicWeatherEntry {
+  planet: string
+  symbol: string
+  sign: string
+  description: string
 }
