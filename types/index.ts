@@ -19,7 +19,7 @@ export interface BirthChart {
   longitude: number
   timezone: string
   western_chart_json: WesternChartData | null
-  vedic_chart_json: Record<string, unknown> | null
+  vedic_chart_json: VedicChartData | null
   created_at: string
 }
 
@@ -67,4 +67,25 @@ export interface CosmicWeatherEntry {
   symbol: string
   sign: string
   description: string
+}
+
+export interface VedicPlanet {
+  name: string
+  sign: string
+  degree: number
+  nakshatra: string
+  retrograde: boolean
+}
+
+export interface VedicNakshatra {
+  planet: string
+  nakshatra: string
+  pada: number
+}
+
+export interface VedicChartData {
+  summary: string
+  lagna: { sign: string; degree: number }
+  planets: VedicPlanet[]
+  nakshatras: VedicNakshatra[]
 }
