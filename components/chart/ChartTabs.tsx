@@ -27,13 +27,6 @@ export default function ChartTabs({ chart, summaryText, tier }: ChartTabsProps) 
     : null
 
   const sortedAspects = [...chart.aspects].sort((a, b) => a.orb - b.orb)
-  // Deduplicate by aspect type so each type label appears exactly once in the DOM
-  const seenTypes = new Set<string>()
-  const uniqueAspects = sortedAspects.filter(a => {
-    if (seenTypes.has(a.type)) return false
-    seenTypes.add(a.type)
-    return true
-  })
 
   return (
     <div>
@@ -67,6 +60,10 @@ export default function ChartTabs({ chart, summaryText, tier }: ChartTabsProps) 
             {moon && <PlanetCard planet={moon} variant="hero" />}
             {rising && <PlanetCard planet={rising} variant="hero" />}
           </div>
+          <div className="bg-nebula border border-white/5 rounded-2xl p-6">
+            <p className="text-violet-light text-xs font-semibold tracking-widest uppercase mb-3">Your Cosmic Blueprint</p>
+            <p className="text-star/90 text-sm leading-relaxed">{summaryText}</p>
+          </div>
         </div>
       )}
 
@@ -80,7 +77,7 @@ export default function ChartTabs({ chart, summaryText, tier }: ChartTabsProps) 
 
       {activeTab === 'Aspects' && (
         <div className="space-y-2">
-          {uniqueAspects.map(aspect => (
+          {sortedAspects.map(aspect => (
             <AspectRow key={`${aspect.planet1}-${aspect.planet2}`} aspect={aspect} planets={chart.planets} />
           ))}
         </div>

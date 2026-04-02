@@ -10,11 +10,13 @@ describe('ChartTabs', () => {
     tier: 'free' as const,
   }
 
-  it('renders Overview tab by default with Big 3', () => {
+  it('renders Overview tab by default with Big 3 and summary', () => {
     render(<ChartTabs {...defaultProps} />)
     expect(screen.getByText('Sun')).toBeInTheDocument()
     expect(screen.getByText('Moon')).toBeInTheDocument()
-    expect(screen.getByText(/Libra/)).toBeInTheDocument() // Rising = house 1 sign
+    // Rising sign appears in both the PlanetCard and summary text
+    expect(screen.getAllByText(/Libra/).length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText('Your Cosmic Blueprint')).toBeInTheDocument()
   })
 
   it('switches to Planets tab and shows all 10 planets', () => {
@@ -24,11 +26,14 @@ describe('ChartTabs', () => {
     expect(screen.getByText('Pluto')).toBeInTheDocument()
   })
 
-  it('switches to Aspects tab and shows aspect rows', () => {
+  it('switches to Aspects tab and shows all aspect rows', () => {
     render(<ChartTabs {...defaultProps} />)
     fireEvent.click(screen.getByRole('tab', { name: /aspects/i }))
-    expect(screen.getByText('Opposition')).toBeInTheDocument()
+    // Multiple oppositions exist in mock data
+    expect(screen.getAllByText('Opposition').length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText('Trine')).toBeInTheDocument()
+    // All 8 mock aspects should render
+    expect(screen.getAllByText(/°/).length).toBe(8)
   })
 
   it('switches to Vedic tab and shows premium gate for free users', () => {
