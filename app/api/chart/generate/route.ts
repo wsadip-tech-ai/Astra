@@ -1,6 +1,6 @@
-// app/api/chart/generate/route.ts
 import { createClient } from '@/lib/supabase/server'
 import { geocodeCity, GeocodingError } from '@/lib/geocoding'
+import { calculateWesternChart, calculateVedicChart } from '@/lib/astrology-engine'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -28,6 +28,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Geocoding service unavailable' }, { status: 503 })
   }
 
+  // Call FastAPI engine (returns null on failure — graceful degradation)
+  const chartParams = {
+    date_of_birth,
+    time_of_birth: time_of_birth || null,
+    latitude: geoResult.lat,
+    longitude: geoResult.lng,
+    timezone: geoResult.timezone,
+  }
+
+  const [westernChart, vedicChart] = await Promise.all([
+    calculateWesternChart(chartParams),
+    calculateVedicChart(chartParams),
+  ])
+
   const { data: chart, error } = await supabase
     .from('birth_charts')
     .insert({
@@ -39,6 +53,8 @@ export async function POST(request: Request) {
       latitude: geoResult.lat,
       longitude: geoResult.lng,
       timezone: geoResult.timezone,
+      western_chart_json: westernChart,
+      vedic_chart_json: vedicChart,
     })
     .select()
     .single()
