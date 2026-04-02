@@ -18,6 +18,11 @@ app.add_middleware(
 app.add_middleware(InternalSecretMiddleware)
 
 
+from app.routes.western import router as western_router
+
+app.include_router(western_router)
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
