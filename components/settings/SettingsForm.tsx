@@ -39,10 +39,17 @@ export default function SettingsForm({ email, name: initialName, tier, chart }: 
     setProfileSaving(true)
     setProfileMsg('')
 
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) {
+      setProfileMsg('Not authenticated')
+      setProfileSaving(false)
+      return
+    }
+
     const { error } = await supabase
       .from('profiles')
       .update({ name })
-      .eq('id', (await supabase.auth.getUser()).data.user?.id)
+      .eq('id', session.user.id)
 
     setProfileSaving(false)
     if (error) {

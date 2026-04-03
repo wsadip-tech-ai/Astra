@@ -13,8 +13,9 @@ export default function Navbar() {
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setIsAuthed(!!user)
+    // Use getSession instead of getUser to avoid server cookie lock contention
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthed(!!session?.user)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
