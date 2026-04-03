@@ -9,25 +9,51 @@ import GlowButton from '@/components/ui/GlowButton'
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [isAuthed, setIsAuthed] = useState(false)
+  const [sunSign, setSunSign] = useState<string | null>(null)
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
-    // Use getSession instead of getUser to avoid server cookie lock contention
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthed(!!session?.user)
+      if (session?.user) {
+        fetchSunSign(session.user.id)
+      }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthed(!!session?.user)
+      if (session?.user) {
+        fetchSunSign(session.user.id)
+      } else {
+        setSunSign(null)
+      }
     })
 
     return () => subscription.unsubscribe()
   }, [supabase])
 
+  async function fetchSunSign(userId: string) {
+    const { data: chart } = await supabase
+      .from('birth_charts')
+      .select('western_chart_json')
+      .eq('user_id', userId)
+      .limit(1)
+      .maybeSingle()
+
+    if (chart?.western_chart_json) {
+      const chartData = chart.western_chart_json as { planets?: { name: string; sign: string }[] }
+      const sun = chartData.planets?.find(p => p.name === 'Sun')
+      if (sun) setSunSign(sun.sign.toLowerCase())
+    }
+  }
+
+  const horoscopeHref = sunSign ? `/horoscope/${sunSign}` : '/horoscope/aries'
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     setIsAuthed(false)
+    setSunSign(null)
     router.push('/')
     router.refresh()
   }
@@ -41,8 +67,8 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-8">
-          <Link href="/horoscope/aries" className="text-muted hover:text-star text-sm transition-colors">
-            Daily Horoscope
+          <Link href={horoscopeHref} className="text-muted hover:text-star text-sm transition-colors">
+            {sunSign ? `${sunSign.charAt(0).toUpperCase() + sunSign.slice(1)} Horoscope` : 'Daily Horoscope'}
           </Link>
           {isAuthed && (
             <Link href="/chat" className="text-muted hover:text-star text-sm transition-colors">
@@ -93,7 +119,9 @@ export default function Navbar() {
       {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden bg-cosmos border-t border-white/5 px-6 py-4 flex flex-col gap-4">
-          <Link href="/horoscope/aries" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Daily Horoscope</Link>
+          <Link href={horoscopeHref} className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>
+            {sunSign ? `${sunSign.charAt(0).toUpperCase() + sunSign.slice(1)} Horoscope` : 'Daily Horoscope'}
+          </Link>
           {isAuthed && (
             <Link href="/chat" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Chat with Astra</Link>
           )}
