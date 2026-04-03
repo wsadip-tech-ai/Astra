@@ -48,7 +48,7 @@ export default async function HoroscopePage({ params }: Props) {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   })
 
-  const reading = horoscope?.reading ?? zodiacSign.placeholderHoroscope
+  const reading = horoscope?.reading ?? 'The stars are aligning your reading — please refresh in a moment. If this persists, the horoscope service may be temporarily unavailable.'
   const compatSign = horoscope?.compatibility_sign
     ? getSignBySlug(horoscope.compatibility_sign)
     : null

@@ -3,9 +3,7 @@ import { redirect } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import GlowButton from '@/components/ui/GlowButton'
 import CosmicProfile from '@/components/dashboard/CosmicProfile'
-import CosmicWeather from '@/components/dashboard/CosmicWeather'
 import Link from 'next/link'
-import { MOCK_COSMIC_WEATHER } from '@/constants/mock-chart'
 import type { WesternChartData } from '@/types'
 
 export default async function DashboardPage() {
@@ -90,9 +88,6 @@ export default async function DashboardPage() {
               </Link>
             </div>
           )}
-
-          {/* Today's Cosmic Weather — always shown */}
-          <CosmicWeather entries={MOCK_COSMIC_WEATHER} />
 
           {/* Feature cards */}
           <div className="grid md:grid-cols-3 gap-6">
