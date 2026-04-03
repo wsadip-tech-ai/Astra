@@ -81,3 +81,27 @@ class VedicChartResponse(BaseModel):
 class ErrorResponse(BaseModel):
     error: str
     detail: str | None = None
+
+
+class CompatibilityPlanet(BaseModel):
+    name: str
+    sign: str
+    degree: int
+
+
+class CompatibilityRequest(BaseModel):
+    chart1_planets: list[CompatibilityPlanet]
+    chart2_planets: list[CompatibilityPlanet]
+
+
+class CrossAspect(BaseModel):
+    planet1: str  # from chart1
+    planet2: str  # from chart2
+    type: str
+    orb: float
+
+
+class CompatibilityResponse(BaseModel):
+    score: int
+    aspects: list[CrossAspect]
+    summary: str
