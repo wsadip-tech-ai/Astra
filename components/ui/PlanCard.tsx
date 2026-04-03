@@ -12,11 +12,12 @@ interface PlanCardProps {
   features: PlanFeature[]
   ctaText: string
   ctaHref: string
+  ctaOnClick?: () => void
   highlighted?: boolean
 }
 
 export default function PlanCard({
-  name, price, period, description, features, ctaText, ctaHref, highlighted
+  name, price, period, description, features, ctaText, ctaHref, ctaOnClick, highlighted
 }: PlanCardProps) {
   return (
     <div className={`relative rounded-2xl p-8 flex flex-col gap-6 ${
@@ -47,7 +48,11 @@ export default function PlanCard({
           </li>
         ))}
       </ul>
-      <GlowButton href={ctaHref} variant={highlighted ? 'primary' : 'secondary'}>
+      <GlowButton
+        href={ctaOnClick ? undefined : ctaHref}
+        onClick={ctaOnClick}
+        variant={highlighted ? 'primary' : 'secondary'}
+      >
         {ctaText}
       </GlowButton>
     </div>

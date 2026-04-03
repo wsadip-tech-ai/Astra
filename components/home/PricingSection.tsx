@@ -1,4 +1,6 @@
-// components/home/PricingSection.tsx
+'use client'
+
+import { useState } from 'react'
 import PlanCard from '@/components/ui/PlanCard'
 
 const FREE_FEATURES = [
@@ -23,7 +25,44 @@ const PREMIUM_FEATURES = [
   { text: 'Priority response speed', included: true },
 ]
 
-export default function PricingSection() {
+interface PricingSectionProps {
+  isLoggedIn?: boolean
+  isPremium?: boolean
+}
+
+export default function PricingSection({ isLoggedIn = false, isPremium = false }: PricingSectionProps) {
+  const [loading, setLoading] = useState<string | null>(null)
+
+  async function handleCheckout(plan: 'monthly' | 'yearly') {
+    setLoading(plan)
+    try {
+      const response = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan }),
+      })
+      const data = await response.json()
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch {
+      setLoading(null)
+    }
+  }
+
+  async function handlePortal() {
+    setLoading('portal')
+    try {
+      const response = await fetch('/api/stripe/portal', { method: 'POST' })
+      const data = await response.json()
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch {
+      setLoading(null)
+    }
+  }
+
   return (
     <section className="py-24 px-6 bg-cosmos" id="pricing">
       <div className="max-w-4xl mx-auto">
@@ -43,17 +82,43 @@ export default function PricingSection() {
             ctaText="Get started free"
             ctaHref="/signup"
           />
-          <PlanCard
-            name="Premium"
-            price="$9.99"
-            period="/month"
-            description="The complete Astra experience — unlimited and deeply personal."
-            features={PREMIUM_FEATURES}
-            ctaText="Start Premium"
-            ctaHref="/signup?plan=premium"
-            highlighted
-          />
+          {isPremium ? (
+            <PlanCard
+              name="Premium"
+              price="$9.99"
+              period="/month"
+              description="The complete Astra experience — unlimited and deeply personal."
+              features={PREMIUM_FEATURES}
+              ctaText={loading === 'portal' ? 'Loading...' : 'Manage Subscription'}
+              ctaHref="#"
+              ctaOnClick={handlePortal}
+              highlighted
+            />
+          ) : (
+            <PlanCard
+              name="Premium"
+              price="$9.99"
+              period="/month"
+              description="The complete Astra experience — unlimited and deeply personal."
+              features={PREMIUM_FEATURES}
+              ctaText={loading ? 'Loading...' : 'Start Premium'}
+              ctaHref={isLoggedIn ? '#' : '/signup?plan=premium'}
+              ctaOnClick={isLoggedIn ? () => handleCheckout('monthly') : undefined}
+              highlighted
+            />
+          )}
         </div>
+        {isLoggedIn && !isPremium && (
+          <div className="text-center mt-6">
+            <button
+              onClick={() => handleCheckout('yearly')}
+              disabled={loading === 'yearly'}
+              className="text-violet-light text-sm hover:text-violet transition-colors"
+            >
+              {loading === 'yearly' ? 'Loading...' : 'Or save with yearly plan — $79/year'}
+            </button>
+          </div>
+        )}
       </div>
     </section>
   )
