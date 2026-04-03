@@ -20,9 +20,11 @@ app.add_middleware(InternalSecretMiddleware)
 
 from app.routes.western import router as western_router
 from app.routes.vedic import router as vedic_router
+from app.routes.compatibility import router as compatibility_router
 
 app.include_router(western_router)
 app.include_router(vedic_router)
+app.include_router(compatibility_router)
 
 
 @app.get("/health")
