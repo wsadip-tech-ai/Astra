@@ -5,7 +5,7 @@ import GlowButton from '@/components/ui/GlowButton'
 import CosmicProfile from '@/components/dashboard/CosmicProfile'
 import CosmicWeather from '@/components/dashboard/CosmicWeather'
 import Link from 'next/link'
-import { MOCK_WESTERN_CHART, MOCK_COSMIC_WEATHER } from '@/constants/mock-chart'
+import { MOCK_COSMIC_WEATHER } from '@/constants/mock-chart'
 import type { WesternChartData } from '@/types'
 
 export default async function DashboardPage() {
@@ -28,9 +28,11 @@ export default async function DashboardPage() {
     .maybeSingle()
 
   const firstName = profile?.name?.split(' ')[0] ?? 'Seeker'
-  const chartData: WesternChartData | null = chart
-    ? ((chart.western_chart_json as WesternChartData) ?? MOCK_WESTERN_CHART)
-    : null
+  const chartData = chart?.western_chart_json as WesternChartData | null
+  const chartNeedsCalculation = chart && !chartData
+
+  // Derive sun sign for horoscope link
+  const sunSign = chartData?.planets?.find(p => p.name === 'Sun')?.sign?.toLowerCase()
 
   return (
     <>
@@ -48,7 +50,7 @@ export default async function DashboardPage() {
             </p>
           </div>
 
-          {/* Onboarding prompt if no chart */}
+          {/* Onboarding prompt if no chart at all */}
           {!chart && (
             <div className="bg-violet/10 border border-violet/30 rounded-2xl p-8 mb-8 text-center">
               <div className="text-4xl mb-3">🌟</div>
@@ -58,8 +60,36 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {/* Cosmic Profile — Big 3 summary (only if chart exists) */}
+          {/* Chart saved but not calculated (engine was down) */}
+          {chartNeedsCalculation && (
+            <div className="bg-violet/10 border border-violet/30 rounded-2xl p-6 mb-8 text-center">
+              <div className="text-3xl mb-2">🔄</div>
+              <h3 className="text-star font-semibold mb-1">Chart needs calculation</h3>
+              <p className="text-muted text-sm mb-4">Your birth details are saved but the chart hasn't been calculated yet. Make sure the engine is running and update your details in Settings.</p>
+              <GlowButton href="/settings" variant="secondary">Go to Settings →</GlowButton>
+            </div>
+          )}
+
+          {/* Cosmic Profile — Big 3 summary (only if chart is calculated) */}
           {chartData && <CosmicProfile chart={chartData} />}
+
+          {/* Your Daily Horoscope link */}
+          {sunSign && (
+            <div className="mb-8">
+              <Link
+                href={`/horoscope/${sunSign}`}
+                className="block bg-gradient-to-r from-violet/10 to-rose/10 border border-violet/20 rounded-2xl p-5 hover:border-violet/40 transition-all group"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-violet-light text-xs font-semibold tracking-widest uppercase mb-1">Your Daily Horoscope</p>
+                    <p className="text-star font-display text-lg capitalize">{sunSign}</p>
+                  </div>
+                  <span className="text-violet-light text-sm group-hover:translate-x-1 transition-transform">Read →</span>
+                </div>
+              </Link>
+            </div>
+          )}
 
           {/* Today's Cosmic Weather — always shown */}
           <CosmicWeather entries={MOCK_COSMIC_WEATHER} />
@@ -67,7 +97,7 @@ export default async function DashboardPage() {
           {/* Feature cards */}
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: '🌙', title: 'My Birth Chart', desc: 'View your natal chart — Western and Vedic', href: '/chart', locked: !chart },
+              { icon: '🌙', title: 'My Birth Chart', desc: 'View your natal chart — Western and Vedic', href: '/chart', locked: !chartData },
               { icon: '🎙️', title: 'Talk to Astra', desc: 'Ask anything by voice or text', href: '/chat', locked: !chart },
               { icon: '💫', title: 'Compatibility', desc: 'Check your compatibility with a partner', href: '/compatibility', locked: !chart },
             ].map(card => card.locked ? (
