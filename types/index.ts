@@ -105,3 +105,12 @@ export interface ChatSession {
   created_at: string
   updated_at: string
 }
+
+export interface HoroscopeData {
+  sign: string
+  date: string
+  reading: string
+  lucky_number: number
+  lucky_color: string
+  compatibility_sign: string
+}
