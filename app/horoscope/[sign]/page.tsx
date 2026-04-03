@@ -1,10 +1,11 @@
 import { notFound } from 'next/navigation'
 import { ZODIAC_SIGNS, ZODIAC_SLUGS, getSignBySlug } from '@/constants/zodiac'
+import { createClient } from '@/lib/supabase/server'
+import { generateHoroscope } from '@/lib/horoscope'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import GlowButton from '@/components/ui/GlowButton'
 import type { Metadata } from 'next'
-import type { HoroscopeData } from '@/types'
 
 export const revalidate = 86400
 
@@ -24,34 +25,64 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-async function fetchHoroscope(sign: string): Promise<HoroscopeData | null> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
-    const res = await fetch(`${baseUrl}/api/horoscope/${sign}`, {
-      next: { revalidate: 86400 },
-    })
-    if (!res.ok) return null
-    return await res.json()
-  } catch {
-    return null
-  }
-}
-
 export default async function HoroscopePage({ params }: Props) {
   const { sign } = await params
   const zodiacSign = getSignBySlug(sign)
   if (!zodiacSign) notFound()
 
-  const horoscope = await fetchHoroscope(sign)
+  const supabase = await createClient()
+  const today = new Date().toISOString().split('T')[0]
 
-  const today = new Date().toLocaleDateString('en-US', {
+  // Check cache first
+  const { data: cached } = await supabase
+    .from('horoscopes')
+    .select('sign, date, reading, lucky_number, lucky_color, compatibility_sign')
+    .eq('sign', sign)
+    .eq('date', today)
+    .maybeSingle()
+
+  let reading: string
+  let luckyNumber: number | null = null
+  let luckyColor: string | null = null
+  let compatibilitySign: string | null = null
+
+  if (cached) {
+    reading = cached.reading
+    luckyNumber = cached.lucky_number
+    luckyColor = cached.lucky_color
+    compatibilitySign = cached.compatibility_sign
+  } else {
+    // Generate fresh horoscope via Claude
+    try {
+      const result = await generateHoroscope(zodiacSign)
+      if (result) {
+        reading = result.reading
+        luckyNumber = result.lucky_number
+        luckyColor = result.lucky_color
+        compatibilitySign = result.compatibility_sign
+
+        // Cache it
+        await supabase.from('horoscopes').upsert({
+          sign,
+          date: today,
+          reading: result.reading,
+          lucky_number: result.lucky_number,
+          lucky_color: result.lucky_color,
+          compatibility_sign: result.compatibility_sign,
+        }, { onConflict: 'sign,date' })
+      } else {
+        reading = 'The stars are aligning your reading — please refresh in a moment.'
+      }
+    } catch {
+      reading = 'The stars are aligning your reading — please refresh in a moment.'
+    }
+  }
+
+  const todayFormatted = new Date().toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   })
 
-  const reading = horoscope?.reading ?? 'The stars are aligning your reading — please refresh in a moment. If this persists, the horoscope service may be temporarily unavailable.'
-  const compatSign = horoscope?.compatibility_sign
-    ? getSignBySlug(horoscope.compatibility_sign)
-    : null
+  const compatSign = compatibilitySign ? getSignBySlug(compatibilitySign) : null
 
   return (
     <>
@@ -68,7 +99,7 @@ export default async function HoroscopePage({ params }: Props) {
           <div className="bg-cosmos border border-violet/20 rounded-2xl p-8 mb-8">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-violet-light text-xs font-semibold tracking-widest uppercase">Today's Reading</span>
-              <span className="text-muted text-xs">· {today}</span>
+              <span className="text-muted text-xs">· {todayFormatted}</span>
             </div>
             <p className="text-star text-lg leading-relaxed font-display italic">
               "{reading}"
@@ -76,15 +107,15 @@ export default async function HoroscopePage({ params }: Props) {
           </div>
 
           {/* Lucky details */}
-          {horoscope && (
+          {luckyNumber && (
             <div className="grid grid-cols-3 gap-3 mb-10">
               <div className="bg-gradient-to-br from-nebula to-cosmos border border-violet/20 rounded-xl p-4 text-center">
                 <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-1">Lucky Number</p>
-                <p className="text-star text-2xl font-display">{horoscope.lucky_number}</p>
+                <p className="text-star text-2xl font-display">{luckyNumber}</p>
               </div>
               <div className="bg-gradient-to-br from-nebula to-cosmos border border-violet/20 rounded-xl p-4 text-center">
                 <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-1">Lucky Color</p>
-                <p className="text-star text-sm font-semibold capitalize">{horoscope.lucky_color}</p>
+                <p className="text-star text-sm font-semibold capitalize">{luckyColor}</p>
               </div>
               <div className="bg-gradient-to-br from-nebula to-cosmos border border-violet/20 rounded-xl p-4 text-center">
                 <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-1">Best Match</p>
