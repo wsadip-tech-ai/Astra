@@ -1,10 +1,10 @@
-// app/horoscope/[sign]/page.tsx
 import { notFound } from 'next/navigation'
 import { ZODIAC_SIGNS, ZODIAC_SLUGS, getSignBySlug } from '@/constants/zodiac'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import GlowButton from '@/components/ui/GlowButton'
 import type { Metadata } from 'next'
+import type { HoroscopeData } from '@/types'
 
 export const revalidate = 86400
 
@@ -20,7 +20,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!s) return {}
   return {
     title: `${s.name} Horoscope Today ${s.symbol} — Astra`,
-    description: `Today's ${s.name} horoscope. ${s.placeholderHoroscope.slice(0, 120)}...`,
+    description: `Today's ${s.name} horoscope. Daily reading, lucky number, and compatibility.`,
+  }
+}
+
+async function fetchHoroscope(sign: string): Promise<HoroscopeData | null> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    const res = await fetch(`${baseUrl}/api/horoscope/${sign}`, {
+      next: { revalidate: 86400 },
+    })
+    if (!res.ok) return null
+    return await res.json()
+  } catch {
+    return null
   }
 }
 
@@ -29,9 +42,16 @@ export default async function HoroscopePage({ params }: Props) {
   const zodiacSign = getSignBySlug(sign)
   if (!zodiacSign) notFound()
 
+  const horoscope = await fetchHoroscope(sign)
+
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   })
+
+  const reading = horoscope?.reading ?? zodiacSign.placeholderHoroscope
+  const compatSign = horoscope?.compatibility_sign
+    ? getSignBySlug(horoscope.compatibility_sign)
+    : null
 
   return (
     <>
@@ -51,9 +71,28 @@ export default async function HoroscopePage({ params }: Props) {
               <span className="text-muted text-xs">· {today}</span>
             </div>
             <p className="text-star text-lg leading-relaxed font-display italic">
-              "{zodiacSign.placeholderHoroscope}"
+              "{reading}"
             </p>
           </div>
+
+          {/* Lucky details */}
+          {horoscope && (
+            <div className="grid grid-cols-3 gap-3 mb-10">
+              <div className="bg-gradient-to-br from-nebula to-cosmos border border-violet/20 rounded-xl p-4 text-center">
+                <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-1">Lucky Number</p>
+                <p className="text-star text-2xl font-display">{horoscope.lucky_number}</p>
+              </div>
+              <div className="bg-gradient-to-br from-nebula to-cosmos border border-violet/20 rounded-xl p-4 text-center">
+                <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-1">Lucky Color</p>
+                <p className="text-star text-sm font-semibold capitalize">{horoscope.lucky_color}</p>
+              </div>
+              <div className="bg-gradient-to-br from-nebula to-cosmos border border-violet/20 rounded-xl p-4 text-center">
+                <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-1">Best Match</p>
+                <p className="text-star text-lg">{compatSign?.symbol ?? '✦'}</p>
+                <p className="text-muted text-xs">{compatSign?.name ?? ''}</p>
+              </div>
+            </div>
+          )}
 
           <div className="mb-10">
             <h2 className="font-display text-xl text-star mb-4">Other signs</h2>
