@@ -89,3 +89,19 @@ export interface VedicChartData {
   planets: VedicPlanet[]
   nakshatras: VedicNakshatra[]
 }
+
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+  timestamp: string
+  audioUrl?: string
+}
+
+export interface ChatSession {
+  id: string
+  user_id: string
+  chart_id: string
+  messages: ChatMessage[]
+  created_at: string
+  updated_at: string
+}
