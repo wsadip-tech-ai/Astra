@@ -97,7 +97,7 @@ function LoginForm() {
               </div>
             )}
 
-            <GlowButton variant="primary" className="w-full mt-2" disabled={loading}>
+            <GlowButton variant="primary" className="w-full mt-2" disabled={loading} type="submit">
               {loading ? 'Signing in…' : 'Sign in →'}
             </GlowButton>
           </form>

@@ -1,22 +1,32 @@
 // components/layout/Navbar.tsx
 'use client'
 import Link from 'next/link'
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import GlowButton from '@/components/ui/GlowButton'
 
-interface NavbarProps {
-  isAuthed?: boolean
-}
-
-export default function Navbar({ isAuthed = false }: NavbarProps) {
+export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [isAuthed, setIsAuthed] = useState(false)
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsAuthed(!!user)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthed(!!session?.user)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [supabase])
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
+    setIsAuthed(false)
     router.push('/')
     router.refresh()
   }
@@ -33,9 +43,11 @@ export default function Navbar({ isAuthed = false }: NavbarProps) {
           <Link href="/horoscope/aries" className="text-muted hover:text-star text-sm transition-colors">
             Daily Horoscope
           </Link>
-          <Link href="/astrologer" className="text-muted hover:text-star text-sm transition-colors">
-            Meet Astra
-          </Link>
+          {isAuthed && (
+            <Link href="/chat" className="text-muted hover:text-star text-sm transition-colors">
+              Chat with Astra
+            </Link>
+          )}
           <Link href="/pricing" className="text-muted hover:text-star text-sm transition-colors">
             Pricing
           </Link>
@@ -47,7 +59,10 @@ export default function Navbar({ isAuthed = false }: NavbarProps) {
               <Link href="/dashboard" className="text-muted hover:text-star text-sm transition-colors">
                 Dashboard
               </Link>
-              <button onClick={handleSignOut} className="text-muted hover:text-star text-sm transition-colors">
+              <Link href="/settings" className="text-muted hover:text-star text-sm transition-colors">
+                Settings
+              </Link>
+              <button onClick={handleSignOut} className="text-muted hover:text-star text-sm transition-colors cursor-pointer">
                 Sign out
               </button>
             </>
@@ -78,12 +93,15 @@ export default function Navbar({ isAuthed = false }: NavbarProps) {
       {menuOpen && (
         <div className="md:hidden bg-cosmos border-t border-white/5 px-6 py-4 flex flex-col gap-4">
           <Link href="/horoscope/aries" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Daily Horoscope</Link>
-          <Link href="/astrologer" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Meet Astra</Link>
+          {isAuthed && (
+            <Link href="/chat" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Chat with Astra</Link>
+          )}
           <Link href="/pricing" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Pricing</Link>
           {isAuthed ? (
             <>
               <Link href="/dashboard" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Dashboard</Link>
-              <button onClick={handleSignOut} className="text-muted hover:text-star text-sm text-left">Sign out</button>
+              <Link href="/settings" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Settings</Link>
+              <button onClick={handleSignOut} className="text-muted hover:text-star text-sm text-left cursor-pointer">Sign out</button>
             </>
           ) : (
             <Link href="/signup" className="text-violet-light text-sm font-semibold" onClick={() => setMenuOpen(false)}>Get Started →</Link>

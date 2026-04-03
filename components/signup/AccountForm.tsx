@@ -101,7 +101,7 @@ export default function AccountForm() {
         />
       </div>
       {error && <p className="text-rose text-sm">{error}</p>}
-      <GlowButton variant="primary" disabled={loading}>
+      <GlowButton variant="primary" disabled={loading} type="submit">
         {loading ? 'Creating account…' : 'Create account →'}
       </GlowButton>
       <div className="relative flex items-center gap-3 my-2">

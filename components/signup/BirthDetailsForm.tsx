@@ -95,7 +95,7 @@ export default function BirthDetailsForm() {
 
       {error && <p className="text-rose text-sm">{error}</p>}
 
-      <GlowButton variant="primary" disabled={loading}>
+      <GlowButton variant="primary" disabled={loading} type="submit">
         {loading ? 'Finding your chart…' : 'Generate My Chart ✦'}
       </GlowButton>
 
