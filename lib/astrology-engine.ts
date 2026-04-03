@@ -8,23 +8,32 @@ interface ChartParams {
   timezone: string
 }
 
-const BASE_URL = process.env.FASTAPI_BASE_URL || 'http://localhost:8000'
-const SECRET = process.env.INTERNAL_SECRET || ''
-
 async function callEngine<T>(path: string, params: ChartParams): Promise<T | null> {
+  const baseUrl = process.env.FASTAPI_BASE_URL || 'http://localhost:8000'
+  const secret = process.env.INTERNAL_SECRET || ''
+
+  console.log(`[astrology-engine] Calling ${baseUrl}${path} with secret=${secret ? 'set' : 'MISSING'}`)
+
   try {
-    const response = await fetch(`${BASE_URL}${path}`, {
+    const response = await fetch(`${baseUrl}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Internal-Secret': SECRET,
+        'X-Internal-Secret': secret,
       },
       body: JSON.stringify(params),
     })
 
-    if (!response.ok) return null
+    console.log(`[astrology-engine] Response: ${response.status}`)
+
+    if (!response.ok) {
+      const text = await response.text()
+      console.error(`[astrology-engine] Error: ${text}`)
+      return null
+    }
     return await response.json() as T
-  } catch {
+  } catch (err) {
+    console.error(`[astrology-engine] Network error:`, err)
     return null
   }
 }
