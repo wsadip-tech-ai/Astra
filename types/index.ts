@@ -114,3 +114,18 @@ export interface HoroscopeData {
   lucky_color: string
   compatibility_sign: string
 }
+
+export interface CrossAspect {
+  planet1: string
+  planet2: string
+  type: string
+  orb: number
+}
+
+export interface CompatibilityResult {
+  score: number
+  aspects: CrossAspect[]
+  summary: string
+  report: string | null
+  partner_chart_id: string
+}
