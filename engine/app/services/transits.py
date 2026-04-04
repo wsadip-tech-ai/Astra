@@ -4,7 +4,7 @@ Calculates current planetary positions, transit-to-natal aspects, Vedha, and Mur
 """
 import swisseph as swe
 from app.services.vedic_chart import (
-    SANSKRIT_SIGNS, NAKSHATRAS, NAKSHATRA_SPAN, PADA_SPAN,
+    SANSKRIT_SIGNS, NAKSHATRAS,
     _sidereal_longitude, _sid_to_sign_degree, _get_nakshatra,
 )
 
