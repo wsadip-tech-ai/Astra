@@ -65,7 +65,7 @@ def calculate_vedic_chart(
     timezone: str,
 ) -> dict:
     from app.services.interpretations import (
-        SIGN_LORDS, get_planet_in_sign, get_planet_in_house,
+        SIGN_LORDS, get_planet_in_sign,
         get_nakshatra_meaning, get_planet_remedy, get_house_lord_in_house,
     )
     from app.services.yogas import detect_yogas
