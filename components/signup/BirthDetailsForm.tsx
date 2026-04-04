@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import GlowButton from '@/components/ui/GlowButton'
+import BsDatePicker from '@/components/ui/BsDatePicker'
 
 export default function BirthDetailsForm() {
   const [dateOfBirth, setDateOfBirth] = useState('')
@@ -51,16 +52,13 @@ export default function BirthDetailsForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div>
-        <label className="block text-star text-sm mb-1" htmlFor="date-of-birth">
+        <label className="block text-star text-sm mb-1">
           Date of Birth <span className="text-rose">*</span>
         </label>
-        <input
-          id="date-of-birth"
-          type="date"
+        <BsDatePicker
           value={dateOfBirth}
-          onChange={e => setDateOfBirth(e.target.value)}
-          required
-          className="w-full bg-cosmos border border-white/10 rounded-lg px-4 py-3 text-star focus:outline-none focus:border-violet/60"
+          onChange={setDateOfBirth}
+          variant="cosmos"
         />
       </div>
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import BsDatePicker from '@/components/ui/BsDatePicker'
 
 interface PartnerFormProps {
   onSubmit: (data: {
@@ -52,11 +53,10 @@ export default function PartnerForm({ onSubmit, loading }: PartnerFormProps) {
         <label className="block text-violet-light text-xs font-semibold tracking-widest uppercase mb-2">
           Date of Birth
         </label>
-        <input
-          type="date"
+        <BsDatePicker
           value={dob}
-          onChange={e => setDob(e.target.value)}
-          className="w-full bg-nebula border border-white/10 rounded-xl px-4 py-3 text-star text-sm focus:outline-none focus:border-violet/50"
+          onChange={setDob}
+          variant="nebula"
         />
       </div>
       <div>
