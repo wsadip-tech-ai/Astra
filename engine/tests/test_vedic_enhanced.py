@@ -126,3 +126,58 @@ async def test_vedic_compatibility_quick_mode(client):
     assert len(data["kootas"]) == 8
     assert data["mangal_dosha_user"] is False
     assert data["mangal_dosha_partner"] is False
+
+
+@pytest.mark.asyncio
+async def test_vaastu_analyze_endpoint(client):
+    response = await client.post("/vaastu/analyze", json={
+        "property": {"length": 30, "breadth": 25, "entrance_direction": "N", "floor_level": "ground"},
+        "user_nakshatra": "Ashwini",
+        "dasha_lord": "Moon",
+        "planets": [
+            {"name": "Sun", "sign": "Mesha", "degree": 10, "house": 1, "nakshatra": "Ashwini", "retrograde": False},
+            {"name": "Moon", "sign": "Tula", "degree": 10, "house": 7, "nakshatra": "Swati", "retrograde": False},
+            {"name": "Mars", "sign": "Karka", "degree": 15, "house": 4, "nakshatra": "Pushya", "retrograde": False},
+            {"name": "Mercury", "sign": "Mesha", "degree": 25, "house": 1, "nakshatra": "Bharani", "retrograde": False},
+            {"name": "Jupiter", "sign": "Simha", "degree": 10, "house": 5, "nakshatra": "Magha", "retrograde": False},
+            {"name": "Venus", "sign": "Mithuna", "degree": 20, "house": 3, "nakshatra": "Ardra", "retrograde": False},
+            {"name": "Saturn", "sign": "Makara", "degree": 5, "house": 10, "nakshatra": "Uttara Ashadha", "retrograde": False},
+            {"name": "Rahu", "sign": "Vrishabha", "degree": 15, "house": 2, "nakshatra": "Rohini", "retrograde": True},
+            {"name": "Ketu", "sign": "Vrishchika", "degree": 15, "house": 8, "nakshatra": "Anuradha", "retrograde": True},
+        ],
+    }, headers=HEADERS)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["zone_map"]) == 16
+    assert "aayadi" in data
+    assert "remedies" in data
+    assert "disclaimer" in data
+
+
+@pytest.mark.asyncio
+async def test_vaastu_aayadi_endpoint(client):
+    response = await client.post("/vaastu/aayadi", json={
+        "length": 30.0,
+        "breadth": 25.0,
+        "user_nakshatra": "Ashwini",
+    }, headers=HEADERS)
+    assert response.status_code == 200
+    data = response.json()
+    assert "aaya" in data
+    assert "vyaya" in data
+    assert "yoni" in data
+
+
+@pytest.mark.asyncio
+async def test_vaastu_hits_endpoint(client):
+    response = await client.post("/vaastu/hits", json={
+        "dasha_lord": "Moon",
+        "planets": [
+            {"name": "Sun", "sign": "Mesha", "degree": 10, "house": 1, "nakshatra": "Ashwini", "retrograde": False},
+            {"name": "Moon", "sign": "Tula", "degree": 10, "house": 7, "nakshatra": "Swati", "retrograde": False},
+        ],
+    }, headers=HEADERS)
+    assert response.status_code == 200
+    data = response.json()
+    assert "primary_hits" in data
+    assert "dasha_lord" in data
