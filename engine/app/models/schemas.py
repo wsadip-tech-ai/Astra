@@ -243,3 +243,41 @@ class YogaRequest(BaseModel):
 
 class YogaListResponse(BaseModel):
     yogas: list[YogaResponse]
+
+
+# --- Vedic Compatibility models ---
+
+class VedicCompatibilityRequest(BaseModel):
+    user_moon_sign: str
+    user_nakshatra: str
+    user_pada: int
+    partner_moon_sign: str
+    partner_nakshatra: str
+    partner_pada: int
+    user_mars_house: int | None = None
+    partner_mars_house: int | None = None
+
+
+class KootaScore(BaseModel):
+    name: str
+    score: float
+    max_score: int
+    description: str
+
+
+class DoshaInfo(BaseModel):
+    type: str
+    person: str
+    severity: str
+    canceled: bool
+    remedy: str
+
+
+class VedicCompatibilityResponse(BaseModel):
+    score: float
+    max_score: int
+    rating: str
+    kootas: list[KootaScore]
+    doshas: list[DoshaInfo]
+    mangal_dosha_user: bool
+    mangal_dosha_partner: bool

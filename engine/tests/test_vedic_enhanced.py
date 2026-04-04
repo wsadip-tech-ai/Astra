@@ -88,3 +88,41 @@ async def test_health_endpoint(client):
     response = await client.get("/health", headers=HEADERS)
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+@pytest.mark.asyncio
+async def test_vedic_compatibility_endpoint(client):
+    response = await client.post("/compatibility/vedic", json={
+        "user_moon_sign": "Mesha",
+        "user_nakshatra": "Ashwini",
+        "user_pada": 1,
+        "partner_moon_sign": "Simha",
+        "partner_nakshatra": "Magha",
+        "partner_pada": 1,
+        "user_mars_house": 7,
+        "partner_mars_house": 3,
+    }, headers=HEADERS)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["kootas"]) == 8
+    assert data["max_score"] == 36
+    assert data["rating"] in ("Excellent", "Good", "Average", "Not Recommended")
+    assert data["mangal_dosha_user"] is True
+    assert data["mangal_dosha_partner"] is False
+
+
+@pytest.mark.asyncio
+async def test_vedic_compatibility_quick_mode(client):
+    response = await client.post("/compatibility/vedic", json={
+        "user_moon_sign": "Vrishabha",
+        "user_nakshatra": "Rohini",
+        "user_pada": 2,
+        "partner_moon_sign": "Kanya",
+        "partner_nakshatra": "Hasta",
+        "partner_pada": 3,
+    }, headers=HEADERS)
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["kootas"]) == 8
+    assert data["mangal_dosha_user"] is False
+    assert data["mangal_dosha_partner"] is False
