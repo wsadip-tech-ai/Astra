@@ -188,3 +188,181 @@ def interpret_all_transits(
         "challenging_count": len(challenging),
         "overall_outlook": overall,
     }
+
+
+# Impact scoring: some transits matter more than others
+IMPACT_WEIGHTS: dict[str, float] = {
+    "Saturn": 1.5,   # Slow-moving, long-lasting effects
+    "Jupiter": 1.4,  # Major benefic, significant shifts
+    "Rahu": 1.3,     # Karmic, intense
+    "Ketu": 1.2,     # Spiritual, detachment
+    "Mars": 1.1,     # Action, conflicts
+    "Sun": 0.9,
+    "Venus": 0.9,
+    "Mercury": 0.8,
+    "Moon": 0.6,     # Fast-moving, daily effects
+}
+
+# Which houses have the biggest life impact
+HIGH_IMPACT_HOUSES = {1, 2, 4, 7, 8, 10, 12}  # Self, money, home, marriage, transformation, career, loss
+
+# Remedy suggestions by planet
+PLANET_REMEDIES: dict[str, dict[str, str]] = {
+    "Sun": {"mantra": "Om Suryaya Namah", "gemstone": "Ruby", "charity": "Donate wheat on Sundays", "practice": "Wake before sunrise, practice Surya Namaskar"},
+    "Moon": {"mantra": "Om Chandraya Namah", "gemstone": "Pearl", "charity": "Donate rice or milk on Mondays", "practice": "Meditate during moonrise, stay near water"},
+    "Mars": {"mantra": "Om Mangalaya Namah", "gemstone": "Red Coral", "charity": "Donate red lentils on Tuesdays", "practice": "Physical exercise, practice patience before reacting"},
+    "Mercury": {"mantra": "Om Budhaya Namah", "gemstone": "Emerald", "charity": "Donate green moong on Wednesdays", "practice": "Journaling, learning new skills, clear communication"},
+    "Jupiter": {"mantra": "Om Gurave Namah", "gemstone": "Yellow Sapphire", "charity": "Donate turmeric or yellow items on Thursdays", "practice": "Study scriptures, teach others, practice gratitude"},
+    "Venus": {"mantra": "Om Shukraya Namah", "gemstone": "Diamond", "charity": "Donate white items on Fridays", "practice": "Appreciate beauty, nurture relationships, creative expression"},
+    "Saturn": {"mantra": "Om Shanaischaraya Namah", "gemstone": "Blue Sapphire", "charity": "Donate black sesame on Saturdays", "practice": "Serve elders, discipline daily routine, practice humility"},
+    "Rahu": {"mantra": "Om Rahuve Namah", "gemstone": "Hessonite (Gomed)", "charity": "Donate to outcasts or underprivileged", "practice": "Avoid shortcuts, ground yourself with routine, reduce screen time"},
+    "Ketu": {"mantra": "Om Ketuve Namah", "gemstone": "Cat's Eye", "charity": "Donate blankets to the poor", "practice": "Meditation, spiritual study, let go of material attachments"},
+}
+
+
+def _compute_impact_score(planet: str, house: int, is_favorable: bool, is_retrograde: bool, is_dasha_lord: bool) -> float:
+    """Score how impactful a transit is (higher = more important to the user)."""
+    score = IMPACT_WEIGHTS.get(planet, 1.0)
+    if house in HIGH_IMPACT_HOUSES:
+        score *= 1.5
+    if not is_favorable:
+        score *= 1.3  # Challenging transits need more attention
+    if is_retrograde:
+        score *= 1.2
+    if is_dasha_lord:
+        score *= 1.8  # Dasha lord transit is extremely significant
+    return round(score, 2)
+
+
+def get_high_impact_summary(
+    planet_interpretations: list[dict],
+    life_area_summary: dict,
+    dasha_lord: str | None = None,
+    upcoming_antardashas: list[dict] | None = None,
+) -> dict:
+    """Extract the 2-3 highest-impact transits and build focused alerts.
+
+    Args:
+        planet_interpretations: from interpret_all_transits
+        life_area_summary: from interpret_all_transits
+        dasha_lord: current Mahadasha planet
+        upcoming_antardashas: list of {planet, start, end} for timeline
+
+    Returns:
+        dict with: alerts (top 2-3), life_scores, timeline, remedies
+    """
+    # Score each transit by impact
+    scored = []
+    for interp in planet_interpretations:
+        is_dasha_lord = dasha_lord and interp["planet"] == dasha_lord
+        impact = _compute_impact_score(
+            planet=interp["planet"],
+            house=interp["house"],
+            is_favorable=interp["is_favorable"],
+            is_retrograde=interp.get("retrograde_note") is not None,
+            is_dasha_lord=bool(is_dasha_lord),
+        )
+        scored.append({**interp, "impact_score": impact})
+
+    # Sort by impact, take top 3
+    scored.sort(key=lambda x: x["impact_score"], reverse=True)
+    top_alerts = []
+    for item in scored[:3]:
+        planet = item["planet"]
+        remedy = PLANET_REMEDIES.get(planet, {})
+
+        if item["is_favorable"]:
+            alert_type = "opportunity"
+            action = f"Maximize this energy: {remedy.get('practice', 'Stay open to opportunities')}"
+        else:
+            alert_type = "attention"
+            action = f"Remedy: {remedy.get('practice', 'Practice patience and awareness')}"
+
+        top_alerts.append({
+            "planet": planet,
+            "house": item["house"],
+            "sign": item["sign"],
+            "type": alert_type,  # "opportunity" or "attention"
+            "impact_score": item["impact_score"],
+            "life_areas": item["life_areas"][:2],
+            "headline": _build_headline(planet, item["house"], item["is_favorable"], item["life_areas"]),
+            "detail": item["summary"],
+            "remedy": {
+                "mantra": remedy.get("mantra", ""),
+                "gemstone": remedy.get("gemstone", ""),
+                "charity": remedy.get("charity", ""),
+                "practice": remedy.get("practice", ""),
+            },
+            "is_favorable": item["is_favorable"],
+        })
+
+    # Life area one-line verdicts
+    life_scores = {}
+    for category, data in life_area_summary.items():
+        outlook = data["outlook"]
+        planet_names = [p["planet"] for p in data["planets"]]
+        if outlook == "favorable":
+            verdict = f"Supported by {', '.join(planet_names[:2])}"
+        elif outlook == "challenging":
+            verdict = f"Watch out — {', '.join(planet_names[:2])} bringing tests"
+        else:
+            verdict = f"Mixed energy from {', '.join(planet_names[:2])}"
+        life_scores[category] = {
+            "outlook": outlook,
+            "verdict": verdict,
+        }
+
+    # Timeline from upcoming antardashas
+    timeline = []
+    if upcoming_antardashas:
+        for ad in upcoming_antardashas[:5]:
+            planet = ad.get("planet", "Unknown")
+            start = ad.get("start", "")
+            # Determine if this antardasha lord is generally beneficial
+            is_benefic = planet in ("Jupiter", "Venus", "Mercury", "Moon")
+            timeline.append({
+                "planet": planet,
+                "start": start,
+                "end": ad.get("end", ""),
+                "nature": "favorable" if is_benefic else "challenging" if planet in ("Saturn", "Rahu", "Ketu") else "mixed",
+                "description": f"{planet} Antardasha begins — {'expansion and opportunities' if is_benefic else 'discipline and transformation required' if planet in ('Saturn', 'Rahu', 'Ketu') else 'action and change'}",
+            })
+
+    return {
+        "alerts": top_alerts,
+        "life_scores": life_scores,
+        "timeline": timeline,
+    }
+
+
+def _build_headline(planet: str, house: int, is_favorable: bool, life_areas: list[str]) -> str:
+    """Build a punchy one-line headline for an alert."""
+    area = life_areas[0] if life_areas else "life"
+
+    FAVORABLE_HEADLINES = {
+        "Jupiter": f"Jupiter blesses your {area.lower()} — growth period ahead",
+        "Venus": f"Venus enhances your {area.lower()} — harmony incoming",
+        "Mercury": f"Mercury sharpens your {area.lower()} — communicate boldly",
+        "Moon": f"Emotional clarity in {area.lower()} matters",
+        "Sun": f"Confidence rising in {area.lower()} — step forward",
+        "Mars": f"Energy surge in {area.lower()} — take action",
+        "Saturn": f"Saturn rewards discipline in {area.lower()}",
+        "Rahu": f"Unconventional gains in {area.lower()} possible",
+        "Ketu": f"Spiritual insight awakening in {area.lower()}",
+    }
+
+    CHALLENGING_HEADLINES = {
+        "Saturn": f"Saturn testing your {area.lower()} — patience is key",
+        "Mars": f"Tensions in {area.lower()} — channel energy wisely",
+        "Rahu": f"Rahu stirring restlessness in {area.lower()} — stay grounded",
+        "Ketu": f"Ketu bringing detachment in {area.lower()} — let go gracefully",
+        "Sun": f"Ego challenges in {area.lower()} — stay humble",
+        "Moon": f"Emotional turbulence in {area.lower()} — self-care needed",
+        "Mercury": f"Communication hurdles in {area.lower()} — think before speaking",
+        "Jupiter": f"Over-expansion risk in {area.lower()} — maintain balance",
+        "Venus": f"Relationship tests in {area.lower()} — nurture with care",
+    }
+
+    if is_favorable:
+        return FAVORABLE_HEADLINES.get(planet, f"{planet} supporting your {area.lower()}")
+    return CHALLENGING_HEADLINES.get(planet, f"{planet} challenging your {area.lower()}")

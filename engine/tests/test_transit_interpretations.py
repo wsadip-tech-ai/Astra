@@ -1,4 +1,4 @@
-from app.services.transit_interpretations import interpret_transit, interpret_all_transits
+from app.services.transit_interpretations import interpret_transit, interpret_all_transits, get_high_impact_summary
 
 
 def test_interpret_transit_favorable():
@@ -78,3 +78,60 @@ def test_interpret_all_transits_counts():
     ]
     result = interpret_all_transits(transit_houses, transit_planets)
     assert result["favorable_count"] + result["challenging_count"] == 3
+
+
+def test_high_impact_returns_alerts():
+    interps = [
+        {"planet": "Saturn", "sign": "Makara", "house": 7, "life_areas": ["Relationships", "Marriage"], "is_favorable": False, "tone": "challenging", "summary": "Saturn in 7th...", "detailed": "...", "retrograde_note": None, "dasha_connection": None},
+        {"planet": "Jupiter", "sign": "Dhanu", "house": 9, "life_areas": ["Spirituality", "Luck"], "is_favorable": True, "tone": "supportive", "summary": "Jupiter in 9th...", "detailed": "...", "retrograde_note": None, "dasha_connection": None},
+        {"planet": "Moon", "sign": "Mesha", "house": 1, "life_areas": ["Self", "Health"], "is_favorable": True, "tone": "supportive", "summary": "Moon in 1st...", "detailed": "...", "retrograde_note": None, "dasha_connection": None},
+    ]
+    life_summary = {"Relationships & Family": {"outlook": "challenging", "planets": [{"planet": "Saturn", "house": 7, "tone": "challenging", "summary": "..."}]}}
+
+    result = get_high_impact_summary(interps, life_summary)
+    assert "alerts" in result
+    assert "life_scores" in result
+    assert "timeline" in result
+    assert len(result["alerts"]) <= 3
+    assert len(result["alerts"]) >= 1
+    # Saturn in 7th (challenging, high-impact house) should rank highest
+    assert result["alerts"][0]["planet"] == "Saturn"
+
+
+def test_high_impact_alerts_have_remedies():
+    interps = [
+        {"planet": "Saturn", "sign": "Makara", "house": 10, "life_areas": ["Career"], "is_favorable": False, "tone": "challenging", "summary": "...", "detailed": "...", "retrograde_note": None, "dasha_connection": None},
+    ]
+    result = get_high_impact_summary(interps, {})
+    alert = result["alerts"][0]
+    assert "remedy" in alert
+    assert "mantra" in alert["remedy"]
+    assert "practice" in alert["remedy"]
+    assert alert["type"] == "attention"
+
+
+def test_high_impact_timeline():
+    interps = [
+        {"planet": "Sun", "sign": "Mesha", "house": 1, "life_areas": ["Self"], "is_favorable": True, "tone": "supportive", "summary": "...", "detailed": "...", "retrograde_note": None, "dasha_connection": None},
+    ]
+    upcoming = [
+        {"planet": "Venus", "start": "2026-06-01", "end": "2027-02-01"},
+        {"planet": "Saturn", "start": "2027-02-01", "end": "2028-09-01"},
+    ]
+    result = get_high_impact_summary(interps, {}, upcoming_antardashas=upcoming)
+    assert len(result["timeline"]) == 2
+    assert result["timeline"][0]["planet"] == "Venus"
+    assert result["timeline"][0]["nature"] == "favorable"
+    assert result["timeline"][1]["nature"] == "challenging"
+
+
+def test_high_impact_dasha_lord_boosted():
+    interps = [
+        {"planet": "Moon", "sign": "Tula", "house": 3, "life_areas": ["Communication"], "is_favorable": True, "tone": "supportive", "summary": "...", "detailed": "...", "retrograde_note": None, "dasha_connection": "Moon is your Dasha lord..."},
+        {"planet": "Saturn", "sign": "Makara", "house": 10, "life_areas": ["Career"], "is_favorable": False, "tone": "challenging", "summary": "...", "detailed": "...", "retrograde_note": None, "dasha_connection": None},
+    ]
+    # Moon is dasha lord — even though it's in a less impactful house (3), the 1.8x boost should make it rank high
+    result = get_high_impact_summary(interps, {}, dasha_lord="Moon")
+    # Moon with dasha lord boost should compete with Saturn
+    planets_in_alerts = [a["planet"] for a in result["alerts"]]
+    assert "Moon" in planets_in_alerts

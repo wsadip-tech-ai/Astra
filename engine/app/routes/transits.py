@@ -5,7 +5,7 @@ from app.models.schemas import (
     TransitResponse, PersonalTransitRequest, PersonalTransitResponse, ErrorResponse,
 )
 from app.services.transits import calculate_transits, calculate_personal_transits
-from app.services.transit_interpretations import interpret_all_transits
+from app.services.transit_interpretations import interpret_all_transits, get_high_impact_summary
 
 router = APIRouter()
 
@@ -66,7 +66,13 @@ async def interpret_transits(request: PersonalTransitRequest):
             dasha_lord=None,  # Caller can pass this separately if needed
         )
 
-        return {**result, **personal}
+        high_impact = get_high_impact_summary(
+            planet_interpretations=result["planet_interpretations"],
+            life_area_summary=result["life_area_summary"],
+            dasha_lord=None,  # Will be enhanced when dasha is passed
+        )
+
+        return {**result, **personal, "high_impact": high_impact}
     except Exception as e:
         return JSONResponse(
             status_code=500,
