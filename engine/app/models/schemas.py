@@ -281,3 +281,101 @@ class VedicCompatibilityResponse(BaseModel):
     doshas: list[DoshaInfo]
     mangal_dosha_user: bool
     mangal_dosha_partner: bool
+
+
+# --- Vaastu models ---
+
+class VaastuPropertyInput(BaseModel):
+    length: float
+    breadth: float
+    entrance_direction: str
+    floor_level: str = "ground"
+
+
+class VaastuRoomDetails(BaseModel):
+    kitchen_zone: str | None = None
+    toilet_zones: list[str] | None = None
+    brahmasthan_status: str | None = None
+    slope_direction: str | None = None
+
+
+class VaastuAnalyzeRequest(BaseModel):
+    property: VaastuPropertyInput
+    room_details: VaastuRoomDetails | None = None
+    user_nakshatra: str
+    user_name_initial: str | None = None
+    planets: list[VedicPlanetResponse]
+    dasha_lord: str
+
+
+class VaastuAayadiRequest(BaseModel):
+    length: float
+    breadth: float
+    user_nakshatra: str
+
+
+class VaastuHitsRequest(BaseModel):
+    planets: list[VedicPlanetResponse]
+    dasha_lord: str
+
+
+class VaastuHitResult(BaseModel):
+    attacker: str
+    victim: str
+    angle: float
+    type: str
+    direction: str
+
+
+class VaastuZoneStatus(BaseModel):
+    zone: str
+    status: str
+    planet: str | None = None
+    hit_type: str | None = None
+    devtas: list[dict] = []
+
+
+class VaastuRemedy(BaseModel):
+    zone: str
+    type: str
+    remedy: str
+    reason: str
+
+
+class AayadiResult(BaseModel):
+    aaya: int
+    vyaya: int
+    aaya_greater: bool
+    yoni: dict
+    footprint_effects: list[dict]
+    overall_harmony: str
+    description: str
+
+
+class VaastuHitsResponse(BaseModel):
+    primary_hits: list[VaastuHitResult]
+    secondary_hits: list[VaastuHitResult]
+    positive_hits: list[VaastuHitResult]
+    dasha_lord: str
+
+
+class VaastuSummary(BaseModel):
+    dasha_lord: str
+    total_zones: int
+    afflicted_zones: int
+    warning_zones: int
+    positive_zones: int
+    clear_zones: int
+    aayadi_harmony: str
+    spatial_overall_status: str
+
+
+class VaastuDiagnosticResponse(BaseModel):
+    summary: VaastuSummary
+    aayadi: AayadiResult
+    hits: VaastuHitsResponse
+    zone_map: list[VaastuZoneStatus]
+    spatial_findings: list[dict]
+    remedies: list[VaastuRemedy]
+    plant_recommendations: list[dict]
+    disclaimer: str

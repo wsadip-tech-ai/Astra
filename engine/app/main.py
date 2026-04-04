@@ -25,6 +25,7 @@ from app.routes.transits import router as transits_router
 from app.routes.dasha import router as dasha_router
 from app.routes.yogas import router as yogas_router
 from app.routes.compatibility_vedic import router as vedic_compat_router
+from app.routes.vaastu import router as vaastu_router
 
 app.include_router(western_router)
 app.include_router(vedic_router)
@@ -33,6 +34,7 @@ app.include_router(transits_router)
 app.include_router(dasha_router)
 app.include_router(yogas_router)
 app.include_router(vedic_compat_router)
+app.include_router(vaastu_router)
 
 
 @app.get("/health")

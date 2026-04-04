@@ -54,7 +54,8 @@ def _build_remedy(zone_name: str, hit_type: str, attacker: str, devtas: list[dic
         )
         reason = f"{attacker} activates positive energy in the {zone_name} zone during current Dasha."
 
-    return {"zone": zone_name, "remedy": remedy_text, "reason": reason}
+    hit_category = hit_type if hit_type in ("killer", "dangerous", "obstacle") else "positive"
+    return {"zone": zone_name, "type": hit_category, "remedy": remedy_text, "reason": reason}
 
 
 def run_vaastu_diagnostic(
