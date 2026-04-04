@@ -5,6 +5,7 @@ from app.models.schemas import (
     TransitResponse, PersonalTransitRequest, PersonalTransitResponse, ErrorResponse,
 )
 from app.services.transits import calculate_transits, calculate_personal_transits
+from app.services.transit_interpretations import interpret_all_transits
 
 router = APIRouter()
 
@@ -40,4 +41,34 @@ async def personal_transits(request: PersonalTransitRequest):
         return JSONResponse(
             status_code=500,
             content={"error": "calculation_failed", "detail": str(e)},
+        )
+
+
+@router.post(
+    "/transits/interpret",
+    responses={500: {"model": ErrorResponse}},
+)
+async def interpret_transits(request: PersonalTransitRequest):
+    try:
+        date_str = request.date or date.today().isoformat()
+        natal = [p.model_dump() for p in request.natal_planets]
+
+        # Get personal transits first
+        personal = calculate_personal_transits(natal, request.moon_sign, date_str)
+
+        # Get transit planet details
+        transit_data = calculate_transits(date_str)
+
+        # Interpret
+        result = interpret_all_transits(
+            transit_houses=personal["transit_houses"],
+            transit_planets=transit_data["planets"],
+            dasha_lord=None,  # Caller can pass this separately if needed
+        )
+
+        return {**result, **personal}
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": "interpretation_failed", "detail": str(e)},
         )
