@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import type { WesternChartData } from '@/types'
 
 interface ReportParams {
@@ -25,15 +25,14 @@ Write a warm, insightful reading about their connection. Reference specific aspe
 
 export async function generateCompatibilityReport(params: ReportParams): Promise<string | null> {
   try {
-    const client = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY })
-    const response = await client.messages.create({
-      model: process.env.CLAUDE_MODEL || 'claude-sonnet-4-6',
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    const response = await client.chat.completions.create({
+      model: process.env.CHAT_MODEL || 'gpt-4o-mini',
       max_tokens: 512,
       messages: [{ role: 'user', content: buildCompatibilityReportPrompt(params) }],
     })
 
-    const block = response.content[0]
-    return block.type === 'text' ? block.text : null
+    return response.choices[0]?.message?.content ?? null
   } catch {
     return null
   }

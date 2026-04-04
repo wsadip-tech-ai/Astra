@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import type { ZodiacSign } from '@/types'
 
 interface HoroscopeFields {
@@ -22,7 +22,12 @@ Return ONLY valid JSON with no other text:
 
 export function parseHoroscopeResponse(raw: string): HoroscopeFields | null {
   try {
-    const data = JSON.parse(raw)
+    // Handle cases where the model wraps JSON in markdown code blocks
+    let cleaned = raw.trim()
+    if (cleaned.startsWith('```')) {
+      cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '')
+    }
+    const data = JSON.parse(cleaned)
     if (
       typeof data.reading !== 'string' ||
       typeof data.lucky_number !== 'number' ||
@@ -43,17 +48,17 @@ export function parseHoroscopeResponse(raw: string): HoroscopeFields | null {
 }
 
 export async function generateHoroscope(sign: ZodiacSign): Promise<HoroscopeFields | null> {
-  const client = new Anthropic({ apiKey: process.env.CLAUDE_API_KEY })
-  const model = process.env.HOROSCOPE_MODEL || 'claude-haiku-4-5'
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  const model = process.env.HOROSCOPE_MODEL || 'gpt-4o-mini'
 
-  const response = await client.messages.create({
+  const response = await client.chat.completions.create({
     model,
     max_tokens: 512,
     messages: [{ role: 'user', content: buildHoroscopePrompt(sign) }],
   })
 
-  const block = response.content[0]
-  if (block.type !== 'text') return null
+  const text = response.choices[0]?.message?.content
+  if (!text) return null
 
-  return parseHoroscopeResponse(block.text)
+  return parseHoroscopeResponse(text)
 }

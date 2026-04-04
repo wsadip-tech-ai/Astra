@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { buildSystemPrompt, buildConversationHistory, createClient as createClaude, getModel, summarizeOlderMessages } from '@/lib/claude'
+import { buildSystemPrompt, buildConversationHistory, createClient as createAI, getModel, summarizeOlderMessages } from '@/lib/claude'
 import { NextResponse } from 'next/server'
 import type { ChatMessage } from '@/types'
 
@@ -85,11 +85,11 @@ export async function POST(request: Request) {
   const vedicSummary = (chart.vedic_chart_json as { summary?: string })?.summary ?? null
 
   // Summarize older messages if conversation is long
-  const claude = createClaude()
+  const openai = createAI()
   let conversationSummary: string | undefined
   if (existingMessages.length > 10) {
     try {
-      conversationSummary = await summarizeOlderMessages(existingMessages, claude)
+      conversationSummary = await summarizeOlderMessages(existingMessages, openai)
     } catch {
       // Summarization failed — proceed without it
     }
@@ -108,32 +108,36 @@ export async function POST(request: Request) {
   const conversationHistory = buildConversationHistory(existingMessages)
   conversationHistory.push({ role: 'user', content: message })
 
-  // Stream response via SSE
+  // Stream response via SSE using OpenAI
   const encoder = new TextEncoder()
   const stream = new ReadableStream({
     async start(controller) {
       try {
-        const claudeStream = claude.messages.stream({
+        const openaiStream = await openai.chat.completions.create({
           model: getModel(),
           max_tokens: 1024,
-          system: systemPrompt,
-          messages: conversationHistory,
+          stream: true,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...conversationHistory,
+          ],
         })
 
         let fullText = ''
 
-        claudeStream.on('text', (text) => {
-          fullText += text
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
-        })
-
-        await claudeStream.finalMessage()
+        for await (const chunk of openaiStream) {
+          const text = chunk.choices[0]?.delta?.content
+          if (text) {
+            fullText += text
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`))
+          }
+        }
 
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ done: true, full_text: fullText })}\n\n`)
         )
 
-        // Save messages and increment count (don't block the stream)
+        // Save messages and increment count
         const now = new Date().toISOString()
         const updatedMessages = [
           ...existingMessages,

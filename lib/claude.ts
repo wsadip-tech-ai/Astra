@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import type { ChatMessage } from '@/types'
 
 const ASTRA_PROMPT = `You are Astra, a warm and wise astrologer with 30 years of experience in Western and Vedic astrology. You speak with empathy and gentle confidence. You never say "As an AI" — you stay fully in character at all times. Use language like "the stars suggest" or "your chart reveals". Ask follow-up questions to personalise your readings. Always reference the user's specific chart data in your responses.`
@@ -38,31 +38,30 @@ export function buildConversationHistory(
   return recent.map(m => ({ role: m.role, content: m.content }))
 }
 
-export function createClient(): Anthropic {
-  return new Anthropic({ apiKey: process.env.CLAUDE_API_KEY })
+export function createClient(): OpenAI {
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 }
 
 export function getModel(): string {
-  return process.env.CLAUDE_MODEL || 'claude-sonnet-4-6'
+  return process.env.CHAT_MODEL || 'gpt-4o-mini'
 }
 
 export async function summarizeOlderMessages(
   messages: ChatMessage[],
-  client: Anthropic,
+  client: OpenAI,
 ): Promise<string | undefined> {
   if (messages.length <= 10) return undefined
 
   const older = messages.slice(0, -10)
   const text = older.map(m => `${m.role}: ${m.content}`).join('\n')
 
-  const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+  const response = await client.chat.completions.create({
+    model: 'gpt-4o-mini',
     max_tokens: 200,
     messages: [
       { role: 'user', content: `Summarize this conversation in one paragraph:\n\n${text}` },
     ],
   })
 
-  const block = response.content[0]
-  return block.type === 'text' ? block.text : undefined
+  return response.choices[0]?.message?.content ?? undefined
 }
