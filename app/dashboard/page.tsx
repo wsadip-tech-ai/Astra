@@ -102,11 +102,17 @@ export default async function DashboardPage() {
               <div
                 key={card.title}
                 aria-disabled="true"
-                className="bg-cosmos border border-white/5 rounded-2xl p-6 opacity-50 cursor-not-allowed"
+                title="Add your birth details first to unlock this feature"
+                className="bg-cosmos border border-white/5 rounded-2xl p-6 opacity-50 cursor-not-allowed relative group"
               >
                 <div className="text-3xl mb-3">{card.icon}</div>
                 <h3 className="text-star font-semibold mb-1">{card.title}</h3>
                 <p className="text-muted text-sm">{card.desc}</p>
+                <div className="absolute inset-x-0 bottom-0 translate-y-full pt-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                  <div className="bg-violet/90 text-white text-xs rounded-lg px-3 py-2 text-center mx-4">
+                    Add your birth details to unlock this feature
+                  </div>
+                </div>
               </div>
             ) : (
               <Link
