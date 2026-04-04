@@ -3,7 +3,7 @@ Vimshottari Dasha calculator.
 120-year planetary timing system based on Moon's nakshatra at birth.
 """
 from datetime import date, timedelta
-from app.services.vedic_chart import NAKSHATRAS, NAKSHATRA_SPAN
+from app.services.vedic_chart import NAKSHATRA_SPAN
 
 # Vimshottari sequence and durations (years)
 DASHA_SEQUENCE = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"]
@@ -18,8 +18,6 @@ NAKSHATRA_LORDS = [
     "Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury",
     "Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury",
 ]
-
-TOTAL_DASHA_DAYS = 120 * 365.25  # 120 years in days
 
 
 def _get_nakshatra_index(moon_longitude: float) -> int:
