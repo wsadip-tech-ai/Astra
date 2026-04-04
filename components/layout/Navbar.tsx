@@ -83,6 +83,11 @@ export default function Navbar() {
               Chat with Astra
             </Link>
           )}
+          {isAuthed && (
+            <Link href="/transit" className="text-muted hover:text-star text-sm transition-colors">
+              Transits
+            </Link>
+          )}
           <Link href="/pricing" className="text-muted hover:text-star text-sm transition-colors">
             Pricing
           </Link>
@@ -131,7 +136,10 @@ export default function Navbar() {
             {sunSign ? `${sunSign.charAt(0).toUpperCase() + sunSign.slice(1)} Horoscope` : 'Daily Horoscope'}
           </Link>
           {isAuthed && (
-            <Link href="/chat" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Chat with Astra</Link>
+            <>
+              <Link href="/chat" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Chat with Astra</Link>
+              <Link href="/transit" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Transits</Link>
+            </>
           )}
           <Link href="/pricing" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Pricing</Link>
           {isAuthed ? (
