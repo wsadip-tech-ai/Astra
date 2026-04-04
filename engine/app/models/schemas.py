@@ -160,3 +160,86 @@ class CompatibilityResponse(BaseModel):
     score: int
     aspects: list[CrossAspect]
     summary: str
+
+
+# --- New endpoint models ---
+
+class TransitPlanetResponse(BaseModel):
+    name: str
+    sign: str
+    degree: int
+    longitude: float
+    nakshatra: str
+    pada: int
+    retrograde: bool
+
+
+class TransitResponse(BaseModel):
+    date: str
+    planets: list[TransitPlanetResponse]
+    dominant_element: str
+
+
+class NatalPlanetInput(BaseModel):
+    name: str
+    sign: str
+    degree: int
+    house: int
+
+
+class PersonalTransitRequest(BaseModel):
+    natal_planets: list[NatalPlanetInput]
+    moon_sign: str
+    date: str | None = None
+
+
+class TransitAspect(BaseModel):
+    transit_planet: str
+    natal_planet: str
+    aspect_type: str
+    orb: int
+    transit_sign: str
+    natal_sign: str
+
+
+class VedhaFlag(BaseModel):
+    planet: str
+    favorable_house: int
+    obstructed_by: str
+    vedha_house: int
+    description: str
+
+
+class PersonalTransitResponse(BaseModel):
+    transit_aspects: list[TransitAspect]
+    vedha_flags: list[VedhaFlag]
+    murthi_nirnaya: str
+    transit_houses: dict[str, int]
+
+
+class DashaRequest(BaseModel):
+    moon_longitude: float
+    date_of_birth: str
+
+
+class MahadashaPeriod(BaseModel):
+    planet: str
+    start: str
+    end: str
+    antardashas: list[DashaPeriod]
+
+
+class FullDashaResponse(BaseModel):
+    mahadashas: list[MahadashaPeriod]
+    current_mahadasha: DashaPeriod
+    current_antardasha: DashaPeriod
+    upcoming_antardashas: list[DashaPeriod]
+
+
+class YogaRequest(BaseModel):
+    planets: list[VedicPlanetResponse]
+    lagna_sign: str
+
+
+class YogaListResponse(BaseModel):
+    yogas: list[YogaResponse]
