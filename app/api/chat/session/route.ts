@@ -10,7 +10,7 @@ export async function GET() {
   }
 
   const { data: session } = await supabase
-    .from('chat_sessions')
+    .from('astra_chats')
     .select('id, messages')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })

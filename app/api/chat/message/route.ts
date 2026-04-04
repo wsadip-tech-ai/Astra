@@ -55,26 +55,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'no_chart' }, { status: 400 })
   }
 
-  // Fetch or create chat session
+  // Fetch or create chat session (by user_id only — chart_id excluded due to Supabase schema cache issue)
   let { data: session } = await supabase
-    .from('chat_sessions')
+    .from('astra_chats')
     .select('id, messages')
     .eq('user_id', user.id)
-    .eq('chart_id', chart.id)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
 
   if (!session) {
-    const { data: newSession } = await supabase
-      .from('chat_sessions')
-      .insert({ user_id: user.id, chart_id: chart.id, messages: [] })
+    const { data: newSession, error: sessionError } = await supabase
+      .from('astra_chats')
+      .insert({ user_id: user.id, messages: [] })
       .select('id, messages')
       .single()
+    if (sessionError) {
+      console.error('[chat/message] Session create error:', sessionError)
+    }
     session = newSession
   }
 
   if (!session) {
+    console.error('[chat/message] No session available')
     return NextResponse.json({ error: 'Failed to create session' }, { status: 500 })
   }
 
@@ -147,7 +150,7 @@ export async function POST(request: Request) {
 
         await Promise.all([
           supabase
-            .from('chat_sessions')
+            .from('astra_chats')
             .update({ messages: updatedMessages, updated_at: now })
             .eq('id', session!.id),
           supabase
@@ -156,6 +159,7 @@ export async function POST(request: Request) {
             .eq('id', user.id),
         ])
       } catch (err) {
+        console.error('[chat/message] Stream error:', err)
         const errorMsg = 'Astra is meditating, please try again shortly'
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ error: errorMsg })}\n\n`)
