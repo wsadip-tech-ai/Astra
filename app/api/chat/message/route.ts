@@ -98,6 +98,30 @@ export async function POST(request: Request) {
     // Transit fetch failed — continue without transits
   }
 
+  // Fetch Vaastu property if saved
+  let vaastuProfile = null
+  try {
+    const { data: vaastuProp } = await supabase
+      .from('astra_vaastu_properties')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (vaastuProp) {
+      vaastuProfile = {
+        length: vaastuProp.length,
+        breadth: vaastuProp.breadth,
+        entrance_direction: vaastuProp.entrance_direction,
+        aayadi_harmony: 'See /vaastu for full analysis',
+        afflicted_zones: [] as string[],
+        dasha_lord: vedicChart?.dasha?.current_mahadasha?.planet || 'Unknown',
+        active_hit: null,
+      }
+    }
+  } catch {
+    // Table may not exist — skip silently
+  }
+
   const systemPrompt = buildSystemPrompt({
     name: profile.name || 'Seeker',
     dateOfBirth: chart.date_of_birth,
@@ -106,6 +130,7 @@ export async function POST(request: Request) {
     westernSummary,
     vedicChart,
     transits,
+    vaastuProfile,
   })
 
   // Use history from client (no DB session for now)

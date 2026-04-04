@@ -38,6 +38,15 @@ interface PromptParams {
   transits: {
     planets: { name: string; sign: string; degree: number; nakshatra: string; retrograde: boolean }[]
   } | null
+  vaastuProfile?: {
+    length: number
+    breadth: number
+    entrance_direction: string
+    aayadi_harmony: string
+    afflicted_zones: string[]
+    dasha_lord: string
+    active_hit: string | null
+  } | null
   conversationSummary?: string
 }
 
@@ -108,6 +117,16 @@ ${params.transits.planets.map(p => {
   const retro = p.retrograde ? ' (retrograde)' : ''
   return `- ${p.name}: ${p.sign} at ${p.degree.toFixed(2)}°, nakshatra ${p.nakshatra}${retro}`
 }).join('\n')}`
+  }
+
+  if (params.vaastuProfile) {
+    const vp = params.vaastuProfile
+    prompt += `\n\n=== VAASTU PROFILE ===
+Property: ${vp.length}ft × ${vp.breadth}ft, ${vp.entrance_direction} entrance
+Aayadi Harmony: ${vp.aayadi_harmony}
+Afflicted Zones: ${vp.afflicted_zones.length > 0 ? vp.afflicted_zones.join(', ') : 'None'}
+Active Dasha: ${vp.dasha_lord}
+${vp.active_hit ? `Active HIT: ${vp.active_hit}` : 'No active negative HITs'}`
   }
 
   if (params.conversationSummary) {
