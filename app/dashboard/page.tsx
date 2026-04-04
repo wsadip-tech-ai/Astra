@@ -3,9 +3,22 @@ import { redirect } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import GlowButton from '@/components/ui/GlowButton'
 import CosmicProfile from '@/components/dashboard/CosmicProfile'
+import CosmicWeather from '@/components/dashboard/CosmicWeather'
 import Link from 'next/link'
 import { mapProfile } from '@/lib/profile'
-import type { WesternChartData } from '@/types'
+import type { WesternChartData, CosmicWeatherEntry } from '@/types'
+
+const PLANET_SYMBOLS: Record<string, string> = {
+  Sun: '☉', Moon: '☽', Mercury: '☿', Venus: '♀', Mars: '♂',
+  Jupiter: '♃', Saturn: '♄', Rahu: '☊', Ketu: '☋',
+}
+
+function buildDescription(p: { name: string; sign: string; nakshatra?: string; retrograde?: boolean }): string {
+  const parts: string[] = [`${p.name} transits through ${p.sign}`]
+  if (p.nakshatra) parts.push(`in ${p.nakshatra}`)
+  if (p.retrograde) parts.push('(retrograde)')
+  return parts.join(' ')
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -34,6 +47,30 @@ export default async function DashboardPage() {
 
   // Derive sun sign for horoscope link
   const sunSign = chartData?.planets?.find(p => p.name === 'Sun')?.sign?.toLowerCase()
+
+  // Fetch live transit data for Cosmic Weather
+  let cosmicWeather: CosmicWeatherEntry[] = []
+  try {
+    const baseUrl = process.env.FASTAPI_BASE_URL || 'http://localhost:8000'
+    const secret = process.env.INTERNAL_SECRET || ''
+    const transitResp = await fetch(`${baseUrl}/transits/today`, {
+      headers: { 'X-Internal-Secret': secret },
+      next: { revalidate: 3600 },
+    })
+    if (transitResp.ok) {
+      const data = await transitResp.json()
+      cosmicWeather = (data.planets ?? []).map(
+        (p: { name: string; sign: string; nakshatra?: string; retrograde?: boolean }) => ({
+          planet: p.name,
+          symbol: PLANET_SYMBOLS[p.name] ?? '✦',
+          sign: p.sign,
+          description: buildDescription(p),
+        }),
+      )
+    }
+  } catch {
+    // Engine unavailable — cosmic weather will be empty
+  }
 
   return (
     <>
@@ -74,6 +111,9 @@ export default async function DashboardPage() {
           {/* Cosmic Profile — Big 3 summary (only if chart is calculated) */}
           {chartData && <CosmicProfile chart={chartData} />}
 
+          {/* Cosmic Weather — live planetary transits */}
+          {cosmicWeather.length > 0 && <CosmicWeather entries={cosmicWeather} />}
+
           {/* Your Daily Horoscope link */}
           {sunSign && (
             <div className="mb-8">
@@ -98,6 +138,7 @@ export default async function DashboardPage() {
               { icon: '🌙', title: 'My Birth Chart', desc: 'View your natal chart — Western and Vedic', href: '/chart', locked: !chartData },
               { icon: '🎙️', title: 'Talk to Astra', desc: 'Ask anything by voice or text', href: '/chat', locked: !chart },
               { icon: '💫', title: 'Compatibility', desc: 'Check your compatibility with a partner', href: '/compatibility', locked: !chart },
+              { icon: '🔭', title: 'Transits', desc: 'See today\'s planetary positions and personal aspects', href: '/transit', locked: !chart },
             ].map(card => card.locked ? (
               <div
                 key={card.title}
