@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { geocodeCity, GeocodingError } from '@/lib/geocoding'
 import { calculateWesternChart } from '@/lib/astrology-engine'
-import { callCompatibilityEngine, generateCompatibilityReport } from '@/lib/compatibility'
+import { callCompatibilityEngine, generateCompatibilityReport, callVedicCompatibilityEngine, generateVedicCompatibilityNarrative } from '@/lib/compatibility'
 import { NextResponse } from 'next/server'
 import type { WesternChartData } from '@/types'
 import { mapProfile } from '@/lib/profile'
@@ -99,6 +99,76 @@ export async function POST(request: Request) {
 
   const compatibility = await callCompatibilityEngine(userChartData.planets, partnerChartData.planets)
 
+  // --- Vedic Ashtakoota compatibility ---
+  const { data: userVedicChart } = await supabase
+    .from('astra_birth_charts')
+    .select('vedic_chart_json')
+    .eq('user_id', user.id)
+    .not('vedic_chart_json', 'is', null)
+    .limit(1)
+    .maybeSingle()
+
+  let vedic = null
+  let vedicNarrative: string | null = null
+
+  if (userVedicChart?.vedic_chart_json) {
+    const userVedic = userVedicChart.vedic_chart_json as Record<string, unknown>
+    const userPlanets = (userVedic.planets || []) as { name: string; sign: string; house: number; nakshatra: string }[]
+    const userNakshatras = (userVedic.nakshatras || []) as { planet: string; nakshatra: string; pada: number }[]
+
+    const userMoon = userPlanets.find(p => p.name === 'Moon')
+    const userMoonNak = userNakshatras.find(n => n.planet === 'Moon')
+    const userMars = userPlanets.find(p => p.name === 'Mars')
+
+    // Generate partner's Vedic chart
+    const partnerVedicResp = await fetch(`${process.env.FASTAPI_BASE_URL || 'http://localhost:8000'}/chart/vedic`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Internal-Secret': process.env.INTERNAL_SECRET || '',
+      },
+      body: JSON.stringify({
+        date_of_birth,
+        time_of_birth: time_of_birth || null,
+        latitude: geoResult.lat,
+        longitude: geoResult.lng,
+        timezone: geoResult.timezone,
+      }),
+    })
+
+    if (partnerVedicResp.ok) {
+      const partnerVedic = await partnerVedicResp.json()
+      const partnerMoon = partnerVedic.planets?.find((p: { name: string }) => p.name === 'Moon')
+      const partnerMoonNak = partnerVedic.nakshatras?.find((n: { planet: string }) => n.planet === 'Moon')
+      const partnerMars = partnerVedic.planets?.find((p: { name: string }) => p.name === 'Mars')
+
+      if (userMoon && userMoonNak && partnerMoon && partnerMoonNak) {
+        vedic = await callVedicCompatibilityEngine({
+          user_moon_sign: userMoon.sign,
+          user_nakshatra: userMoonNak.nakshatra,
+          user_pada: userMoonNak.pada,
+          partner_moon_sign: partnerMoon.sign,
+          partner_nakshatra: partnerMoonNak.nakshatra,
+          partner_pada: partnerMoonNak.pada,
+          user_mars_house: userMars?.house ?? null,
+          partner_mars_house: partnerMars?.house ?? null,
+        })
+
+        if (vedic && profile?.subscription_tier === 'premium') {
+          vedicNarrative = await generateVedicCompatibilityNarrative({
+            userName: profile.name || 'You',
+            partnerName: partner_name,
+            score: vedic.score,
+            maxScore: vedic.max_score,
+            rating: vedic.rating,
+            kootas: vedic.kootas,
+            doshas: vedic.doshas,
+          })
+        }
+      }
+    }
+  }
+
   if (!compatibility) {
     return NextResponse.json({
       score: null,
@@ -106,6 +176,8 @@ export async function POST(request: Request) {
       summary: null,
       report: null,
       partner_chart_id: partnerChart.id,
+      vedic,
+      vedic_narrative: vedicNarrative,
     })
   }
 
@@ -128,10 +200,12 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({
-    score: compatibility.score,
-    aspects: compatibility.aspects,
-    summary: compatibility.summary,
+    score: compatibility?.score ?? null,
+    aspects: compatibility?.aspects ?? [],
+    summary: compatibility?.summary ?? null,
     report,
     partner_chart_id: partnerChart.id,
+    vedic,
+    vedic_narrative: vedicNarrative,
   })
 }
