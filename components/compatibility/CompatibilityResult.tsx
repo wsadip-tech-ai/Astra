@@ -54,7 +54,7 @@ export default function CompatibilityResult({
 
       {/* Aspects list */}
       <div className="space-y-2 mb-6">
-        <p className="text-violet-light text-xs font-semibold tracking-widest uppercase mb-3">Cross-Aspects</p>
+        <p className="text-violet-light text-xs font-semibold tracking-widest uppercase mb-3">Western Planetary Aspects</p>
         {visibleAspects.map((a, i) => {
           const typeName = a.type.charAt(0).toUpperCase() + a.type.slice(1)
           return (
