@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import SettingsForm from '@/components/settings/SettingsForm'
+import { mapProfile } from '@/lib/profile'
 
 export default async function SettingsPage() {
   const supabase = await createClient()
@@ -9,11 +10,13 @@ export default async function SettingsPage() {
 
   if (!user) redirect('/login?next=/settings')
 
-  const { data: profile } = await supabase
+  const { data: rawProfile } = await supabase
     .from('profiles')
-    .select('name, subscription_tier')
+    .select('*')
     .eq('id', user.id)
     .single()
+
+  const profile = rawProfile ? mapProfile(rawProfile as Record<string, unknown>) : null
 
   const { data: chart } = await supabase
     .from('birth_charts')

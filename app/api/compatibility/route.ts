@@ -4,6 +4,7 @@ import { calculateWesternChart } from '@/lib/astrology-engine'
 import { callCompatibilityEngine, generateCompatibilityReport } from '@/lib/compatibility'
 import { NextResponse } from 'next/server'
 import type { WesternChartData } from '@/types'
+import { mapProfile } from '@/lib/profile'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -21,11 +22,13 @@ export async function POST(request: Request) {
   }
 
   // Fetch user's profile and chart
-  const { data: profile } = await supabase
+  const { data: rawProfile } = await supabase
     .from('profiles')
-    .select('name, subscription_tier')
+    .select('*')
     .eq('id', user.id)
     .single()
+
+  const profile = rawProfile ? mapProfile(rawProfile as Record<string, unknown>) : null
 
   const { data: userChart } = await supabase
     .from('birth_charts')

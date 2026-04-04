@@ -4,6 +4,7 @@ import Navbar from '@/components/layout/Navbar'
 import ChartTabs from '@/components/chart/ChartTabs'
 import GlowButton from '@/components/ui/GlowButton'
 import type { WesternChartData } from '@/types'
+import { mapProfile } from '@/lib/profile'
 
 function generateSummaryText(chart: WesternChartData): string {
   const sun = chart.planets.find(p => p.name === 'Sun')
@@ -24,11 +25,13 @@ export default async function ChartPage() {
 
   if (!user) redirect('/login?next=/chart')
 
-  const { data: profile } = await supabase
+  const { data: rawProfile } = await supabase
     .from('profiles')
-    .select('subscription_tier')
+    .select('*')
     .eq('id', user.id)
     .single()
+
+  const profile = rawProfile ? mapProfile(rawProfile as Record<string, unknown>) : null
 
   const { data: chart } = await supabase
     .from('birth_charts')

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createOrGetCustomer, createCheckoutSession, getPriceId } from '@/lib/stripe'
 import { NextResponse } from 'next/server'
+import { mapProfile } from '@/lib/profile'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -20,11 +21,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Stripe price not configured' }, { status: 500 })
   }
 
-  const { data: profile } = await supabase
+  const { data: rawProfile } = await supabase
     .from('profiles')
-    .select('name, stripe_customer_id')
+    .select('*')
     .eq('id', user.id)
     .single()
+
+  const profile = rawProfile ? mapProfile(rawProfile as Record<string, unknown>) : null
 
   const customerId = await createOrGetCustomer(
     user.id,

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createPortalSession } from '@/lib/stripe'
 import { NextResponse } from 'next/server'
+import { mapProfile } from '@/lib/profile'
 
 export async function POST() {
   const supabase = await createClient()
@@ -10,11 +11,13 @@ export async function POST() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: profile } = await supabase
+  const { data: rawProfile } = await supabase
     .from('profiles')
-    .select('stripe_customer_id')
+    .select('*')
     .eq('id', user.id)
     .single()
+
+  const profile = rawProfile ? mapProfile(rawProfile as Record<string, unknown>) : null
 
   if (!profile?.stripe_customer_id) {
     return NextResponse.json({ error: 'No subscription found' }, { status: 400 })

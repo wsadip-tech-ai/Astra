@@ -3,6 +3,7 @@ import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import PricingSection from '@/components/home/PricingSection'
 import type { Metadata } from 'next'
+import { mapProfile } from '@/lib/profile'
 
 export const metadata: Metadata = {
   title: 'Pricing — Astra',
@@ -15,11 +16,12 @@ export default async function PricingPage() {
 
   let isPremium = false
   if (user) {
-    const { data: profile } = await supabase
+    const { data: rawProfile } = await supabase
       .from('profiles')
-      .select('subscription_tier')
+      .select('*')
       .eq('id', user.id)
       .single()
+    const profile = rawProfile ? mapProfile(rawProfile as Record<string, unknown>) : null
     isPremium = profile?.subscription_tier === 'premium'
   }
 

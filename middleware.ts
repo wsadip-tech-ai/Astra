@@ -53,11 +53,12 @@ export async function middleware(request: NextRequest) {
   if (user && isPremiumRoute(pathname)) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('subscription_tier')
+      .select('*')
       .eq('id', user.id)
       .single()
 
-    if (profile?.subscription_tier !== 'premium') {
+    const subscriptionTier = (profile as Record<string, unknown> | null)?.subscription_tier ?? 'free'
+    if (subscriptionTier !== 'premium') {
       const pricingUrl = request.nextUrl.clone()
       pricingUrl.pathname = '/pricing'
       const redirectResponse = NextResponse.redirect(pricingUrl)
