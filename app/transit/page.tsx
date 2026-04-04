@@ -30,6 +30,8 @@ export default async function TransitPage() {
 
   // Fetch personal transits if user has Vedic chart
   let personal: TransitViewProps['personal'] = null
+  let interpreted: TransitViewProps['interpreted'] = null
+  let dasha: TransitViewProps['dasha'] = undefined
   if (transits) {
     try {
       const { data: chart } = await supabase
@@ -39,14 +41,18 @@ export default async function TransitPage() {
         .limit(1)
         .maybeSingle()
 
-      const vedic = chart?.vedic_chart_json as {
-        planets?: { name: string; sign: string; degree: number }[]
+      const vedicData = chart?.vedic_chart_json as {
+        planets?: { name: string; sign: string; degree: number; house?: number }[]
         lagna?: { sign: string }
+        dasha?: {
+          current_mahadasha: { planet: string; start: string; end: string }
+          current_antardasha: { planet: string; start: string; end: string }
+        }
       } | null
 
-      if (vedic?.planets) {
-        const moonPlanet = vedic.planets.find(p => p.name === 'Moon')
-        const moonSign = moonPlanet?.sign ?? vedic.lagna?.sign ?? 'Aries'
+      if (vedicData?.planets) {
+        const moonPlanet = vedicData.planets.find(p => p.name === 'Moon')
+        const moonSign = moonPlanet?.sign ?? vedicData.lagna?.sign ?? 'Aries'
 
         const personalResp = await fetch(`${FASTAPI_BASE_URL}/transits/personal`, {
           method: 'POST',
@@ -55,7 +61,7 @@ export default async function TransitPage() {
             'X-Internal-Secret': INTERNAL_SECRET,
           },
           body: JSON.stringify({
-            natal_planets: vedic.planets.map(p => ({
+            natal_planets: vedicData.planets.map(p => ({
               name: p.name,
               sign: p.sign,
               degree: p.degree,
@@ -67,6 +73,27 @@ export default async function TransitPage() {
         if (personalResp.ok) {
           personal = await personalResp.json()
         }
+
+        // Fetch interpreted transits
+        if (moonPlanet) {
+          try {
+            const interpResp = await fetch(`${FASTAPI_BASE_URL}/transits/interpret`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': INTERNAL_SECRET },
+              body: JSON.stringify({
+                natal_planets: vedicData.planets.map(p => ({ name: p.name, sign: p.sign, degree: p.degree, house: p.house })),
+                moon_sign: moonPlanet.sign,
+              }),
+            })
+            if (interpResp.ok) {
+              interpreted = await interpResp.json()
+            }
+          } catch {
+            // Interpretation failed — show raw data
+          }
+        }
+
+        dasha = vedicData.dasha ?? undefined
       }
     } catch (err) {
       console.error('[transit/page] Failed to fetch personal transits:', err)
@@ -79,7 +106,7 @@ export default async function TransitPage() {
       <main className="min-h-screen bg-void pt-24 px-6">
         <div className="max-w-4xl mx-auto py-12">
           {transits ? (
-            <TransitView transits={transits} personal={personal} />
+            <TransitView transits={transits} personal={personal} interpreted={interpreted} dasha={dasha} />
           ) : (
             <div className="text-center py-24">
               <div className="text-5xl mb-4">🔭</div>
