@@ -25,20 +25,7 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
   const [count, setCount] = useState(messagesUsed)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    // Restore session on mount
-    fetch('/api/chat/session')
-      .then(res => res.json())
-      .then(data => {
-        if (data.messages?.length) {
-          setMessages(data.messages.map((m: { role: string; content: string }) => ({
-            role: m.role as 'user' | 'assistant',
-            content: m.content,
-          })))
-        }
-      })
-      .catch(() => {})
-  }, [])
+  // Session persistence disabled — chat history lives in client state only
 
   useEffect(() => {
     // Scroll to bottom on new messages
@@ -59,7 +46,10 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
       const response = await fetch('/api/chat/message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({
+          message: text,
+          history: messages.map(m => ({ role: m.role, content: m.content })),
+        }),
       })
 
       if (!response.ok) {

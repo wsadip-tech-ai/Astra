@@ -10,8 +10,8 @@ export async function GET() {
   }
 
   const { data: session } = await supabase
-    .from('astra_chats')
-    .select('id, messages')
+    .from('user_chats')
+    .select('id, msgs')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(1)
@@ -22,7 +22,7 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    messages: session.messages || [],
+    messages: session.msgs || [],
     session_id: session.id,
   })
 }
