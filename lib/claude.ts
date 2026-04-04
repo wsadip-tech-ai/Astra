@@ -8,26 +8,107 @@ function getAstraPrompt(): string {
 IMPORTANT: Today's date is ${today}. Always reference current and future dates accurately. Never mention dates in the past as if they are upcoming.`
 }
 
+function ordinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd']
+  const v = n % 100
+  return n + (s[(v - 20) % 10] ?? s[v] ?? s[0])
+}
+
 interface PromptParams {
   name: string
   dateOfBirth: string
   timeOfBirth: string | null
   placeOfBirth: string
   westernSummary: string
-  vedicSummary: string | null
+  vedicChart: {
+    summary: string
+    lagna: { sign: string; degree: number }
+    houses: { number: number; sign: string; lord: string; lord_house: number }[]
+    yogas: { name: string; present: boolean; strength: string; interpretation: string }[]
+    dasha: {
+      current_mahadasha: { planet: string; start: string; end: string }
+      current_antardasha: { planet: string; start: string; end: string }
+    }
+    interpretations: {
+      lagna_lord: string
+      moon_nakshatra: string
+      planet_highlights: { planet: string; text: string }[]
+    }
+  } | null
+  transits: {
+    planets: { name: string; sign: string; degree: number; nakshatra: string; retrograde: boolean }[]
+  } | null
   conversationSummary?: string
 }
 
 export function buildSystemPrompt(params: PromptParams): string {
   const time = params.timeOfBirth ?? 'time unknown'
-  const vedic = params.vedicSummary ?? 'not available'
 
   let prompt = `${getAstraPrompt()}
 
 User: ${params.name}, born ${params.dateOfBirth} at ${time} in ${params.placeOfBirth}.
 
-Western chart: ${params.westernSummary}
-Vedic chart: ${vedic}`
+## Western Chart
+${params.westernSummary}`
+
+  if (params.vedicChart) {
+    const vc = params.vedicChart
+
+    prompt += `
+
+## Vedic Chart
+${vc.summary}
+
+### Lagna (Ascendant)
+${vc.lagna.sign} at ${vc.lagna.degree.toFixed(2)}°`
+
+    if (vc.houses.length > 0) {
+      prompt += `
+
+### Houses
+${vc.houses.map(h => `- ${ordinal(h.number)} house: ${h.sign} — lord ${h.lord} in ${ordinal(h.lord_house)} house`).join('\n')}`
+    }
+
+    const activeYogas = vc.yogas.filter(y => y.present)
+    if (activeYogas.length > 0) {
+      prompt += `
+
+### Active Yogas
+${activeYogas.map(y => `- ${y.name} (${y.strength}): ${y.interpretation}`).join('\n')}`
+    }
+
+    prompt += `
+
+### Dasha Period
+- Mahadasha: ${vc.dasha.current_mahadasha.planet} (${vc.dasha.current_mahadasha.start} to ${vc.dasha.current_mahadasha.end})
+- Antardasha: ${vc.dasha.current_antardasha.planet} (${vc.dasha.current_antardasha.start} to ${vc.dasha.current_antardasha.end})`
+
+    prompt += `
+
+### Interpretations
+- Lagna Lord: ${vc.interpretations.lagna_lord}
+- Moon Nakshatra: ${vc.interpretations.moon_nakshatra}`
+
+    if (vc.interpretations.planet_highlights.length > 0) {
+      prompt += `
+${vc.interpretations.planet_highlights.map(p => `- ${p.planet}: ${p.text}`).join('\n')}`
+    }
+  } else {
+    prompt += `
+
+## Vedic Chart
+Not available`
+  }
+
+  if (params.transits) {
+    prompt += `
+
+## Today's Planetary Transits
+${params.transits.planets.map(p => {
+  const retro = p.retrograde ? ' (retrograde)' : ''
+  return `- ${p.name}: ${p.sign} at ${p.degree.toFixed(2)}°, nakshatra ${p.nakshatra}${retro}`
+}).join('\n')}`
+  }
 
   if (params.conversationSummary) {
     prompt += `\n\nPrevious conversation context: ${params.conversationSummary}`

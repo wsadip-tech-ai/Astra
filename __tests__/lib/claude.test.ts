@@ -15,7 +15,28 @@ describe('claude', () => {
       timeOfBirth: '14:30',
       placeOfBirth: 'Kathmandu',
       westernSummary: 'Sun Taurus, Moon Scorpio, ASC Libra',
-      vedicSummary: 'Lagna Kanya, Moon Makara, Nakshatra Uttara Ashadha',
+      vedicChart: {
+        summary: 'Lagna Kanya, Moon Makara, Nakshatra Uttara Ashadha',
+        lagna: { sign: 'Kanya', degree: 12.5 },
+        houses: [
+          { number: 1, sign: 'Kanya', lord: 'Mercury', lord_house: 10 },
+        ],
+        yogas: [
+          { name: 'Gajakesari', present: true, strength: 'strong', interpretation: 'Prosperity and wisdom' },
+        ],
+        dasha: {
+          current_mahadasha: { planet: 'Jupiter', start: '2020-01-01', end: '2036-01-01' },
+          current_antardasha: { planet: 'Saturn', start: '2024-01-01', end: '2026-06-01' },
+        },
+        interpretations: {
+          lagna_lord: 'Mercury in 10th house gives career success',
+          moon_nakshatra: 'Uttara Ashadha — disciplined and goal-oriented',
+          planet_highlights: [
+            { planet: 'Jupiter', text: 'Exalted, bestowing great fortune' },
+          ],
+        },
+      },
+      transits: null,
     })
 
     expect(prompt).toContain('You are Astra')
@@ -35,10 +56,11 @@ describe('claude', () => {
       timeOfBirth: null,
       placeOfBirth: 'Kathmandu',
       westernSummary: 'Sun Taurus, Moon Scorpio, ASC Libra',
-      vedicSummary: null,
+      vedicChart: null,
+      transits: null,
     })
 
-    expect(prompt).toContain('not available')
+    expect(prompt).toContain('Not available')
     expect(prompt).toContain('time unknown')
   })
 

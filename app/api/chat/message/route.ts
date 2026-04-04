@@ -3,6 +3,9 @@ import { buildSystemPrompt, buildConversationHistory, createClient as createAI, 
 import { mapProfile } from '@/lib/profile'
 import { NextResponse } from 'next/server'
 
+const FASTAPI_BASE_URL = process.env.FASTAPI_BASE_URL ?? 'http://localhost:8000'
+const INTERNAL_SECRET = process.env.INTERNAL_SECRET ?? ''
+
 export async function POST(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -50,7 +53,50 @@ export async function POST(request: Request) {
 
   // Build prompt
   const westernSummary = (chart.western_chart_json as { summary?: string })?.summary ?? 'not calculated'
-  const vedicSummary = (chart.vedic_chart_json as { summary?: string })?.summary ?? null
+
+  type VedicChartJson = {
+    summary: string
+    lagna: { sign: string; degree: number }
+    houses: { number: number; sign: string; lord: string; lord_house: number }[]
+    yogas: { name: string; present: boolean; strength: string; interpretation: string }[]
+    dasha: {
+      current_mahadasha: { planet: string; start: string; end: string }
+      current_antardasha: { planet: string; start: string; end: string }
+    }
+    interpretations: {
+      lagna_lord: string
+      moon_nakshatra: string
+      planet_highlights: { planet: string; text: string }[]
+    }
+  }
+
+  const rawVedic = chart.vedic_chart_json as Partial<VedicChartJson> | null
+  const vedicChart: VedicChartJson | null =
+    rawVedic &&
+    rawVedic.summary !== undefined &&
+    rawVedic.lagna !== undefined &&
+    rawVedic.houses !== undefined &&
+    rawVedic.yogas !== undefined &&
+    rawVedic.dasha !== undefined &&
+    rawVedic.interpretations !== undefined
+      ? (rawVedic as VedicChartJson)
+      : null
+
+  // Fetch today's transits from FastAPI (graceful failure)
+  type TransitPlanet = { name: string; sign: string; degree: number; nakshatra: string; retrograde: boolean }
+  type TransitsPayload = { planets: TransitPlanet[] }
+  let transits: TransitsPayload | null = null
+  try {
+    const transitRes = await fetch(`${FASTAPI_BASE_URL}/transits/today`, {
+      headers: { 'X-Internal-Secret': INTERNAL_SECRET },
+      signal: AbortSignal.timeout(5000),
+    })
+    if (transitRes.ok) {
+      transits = (await transitRes.json()) as TransitsPayload
+    }
+  } catch {
+    // Transit fetch failed — continue without transits
+  }
 
   const systemPrompt = buildSystemPrompt({
     name: profile.name || 'Seeker',
@@ -58,7 +104,8 @@ export async function POST(request: Request) {
     timeOfBirth: chart.time_of_birth,
     placeOfBirth: chart.place_of_birth,
     westernSummary,
-    vedicSummary,
+    vedicChart,
+    transits,
   })
 
   // Use history from client (no DB session for now)
