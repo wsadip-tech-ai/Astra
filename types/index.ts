@@ -73,6 +73,7 @@ export interface VedicPlanet {
   name: string
   sign: string
   degree: number
+  house: number
   nakshatra: string
   retrograde: boolean
 }
@@ -83,11 +84,52 @@ export interface VedicNakshatra {
   pada: number
 }
 
+export interface VedicHouse {
+  number: number
+  sign: string
+  lord: string
+  lord_house: number
+}
+
+export interface VedicYoga {
+  name: string
+  present: boolean
+  strength: string
+  interpretation: string
+}
+
+export interface VedicDashaPeriod {
+  planet: string
+  start: string
+  end: string
+}
+
 export interface VedicChartData {
   summary: string
-  lagna: { sign: string; degree: number }
+  lagna: { sign: string; degree: number; nakshatra?: string; pada?: number }
   planets: VedicPlanet[]
   nakshatras: VedicNakshatra[]
+  houses: VedicHouse[]
+  yogas: VedicYoga[]
+  dasha: {
+    current_mahadasha: VedicDashaPeriod
+    current_antardasha: VedicDashaPeriod
+    upcoming_antardashas: VedicDashaPeriod[]
+  }
+  interpretations: {
+    lagna_lord: string
+    moon_nakshatra: string
+    planet_highlights: { planet: string; text: string }[]
+  }
+  remedies: {
+    planet: string
+    reason: string
+    gemstone: string
+    mantra: string
+    charity: string
+    deity?: string
+    disclaimer: string
+  }[]
 }
 
 export interface ChatMessage {

@@ -43,7 +43,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing metadata' }, { status: 400 })
     }
 
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId) as unknown as {
+      current_period_end: number
+      items: { data: { plan?: { interval?: string } }[] }
+    }
     const periodEnd = new Date(subscription.current_period_end * 1000).toISOString()
     const interval = subscription.items.data[0]?.plan?.interval
     const plan = interval === 'year' ? 'yearly' : 'monthly'
