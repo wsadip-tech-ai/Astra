@@ -1,6 +1,5 @@
 import { notFound } from 'next/navigation'
 import { ZODIAC_SIGNS, ZODIAC_SLUGS, getSignBySlug } from '@/constants/zodiac'
-import { createClient } from '@/lib/supabase/server'
 import { createServerClient } from '@supabase/ssr'
 import { generateHoroscope } from '@/lib/horoscope'
 import Navbar from '@/components/layout/Navbar'
@@ -39,16 +38,24 @@ export default async function HoroscopePage({ params }: Props) {
   const zodiacSign = getSignBySlug(sign)
   if (!zodiacSign) notFound()
 
-  const supabase = await createClient()
+  const serviceClient = createServiceClient()
   const today = new Date().toISOString().split('T')[0]
 
-  // Check cache first
-  const { data: cached } = await supabase
+  // Check cache first (use service client — horoscopes are public, no user session needed)
+  const { data: cached, error: cacheError } = await serviceClient
     .from('astra_horoscopes')
     .select('sign, date, reading, lucky_number, lucky_color, compatibility_sign')
     .eq('sign', sign)
     .eq('date', today)
     .maybeSingle()
+
+  if (cacheError) {
+    console.error('[horoscope] Cache check error:', cacheError.message)
+  } else if (cached) {
+    console.log('[horoscope] Cache HIT for', sign, today)
+  } else {
+    console.log('[horoscope] Cache MISS for', sign, today, '— generating...')
+  }
 
   let reading: string
   let luckyNumber: number | null = null
@@ -71,7 +78,6 @@ export default async function HoroscopePage({ params }: Props) {
         compatibilitySign = result.compatibility_sign
 
         // Cache it using service role (bypasses RLS)
-        const serviceClient = createServiceClient()
         await serviceClient.from('astra_horoscopes').upsert({
           sign,
           date: today,
