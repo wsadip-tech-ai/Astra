@@ -29,9 +29,22 @@ export async function GET(
     return NextResponse.json(cached)
   }
 
+  // Fetch transits from engine
+  let transits = undefined
+  try {
+    const transitResp = await fetch(`${process.env.FASTAPI_BASE_URL || 'http://localhost:8000'}/transits/today`, {
+      headers: { 'X-Internal-Secret': process.env.INTERNAL_SECRET || '' },
+    })
+    if (transitResp.ok) {
+      transits = await transitResp.json()
+    }
+  } catch {
+    // Proceed without transits
+  }
+
   // Generate
   try {
-    const result = await generateHoroscope(zodiacSign)
+    const result = await generateHoroscope(zodiacSign, transits)
     if (!result) {
       return NextResponse.json(
         { error: 'Horoscope generation temporarily unavailable' },

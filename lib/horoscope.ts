@@ -8,9 +8,25 @@ interface HoroscopeFields {
   compatibility_sign: string
 }
 
-export function buildHoroscopePrompt(sign: ZodiacSign): string {
+interface TransitData {
+  planets: { name: string; sign: string; degree: number; nakshatra: string; retrograde: boolean }[]
+}
+
+export function buildHoroscopePrompt(sign: ZodiacSign, transits?: TransitData): string {
   const today = new Date().toISOString().split('T')[0]
-  return `Today's date is ${today}. Generate today's horoscope for ${sign.name} (${sign.dates}, ${sign.element} sign, ruled by ${sign.rulingPlanet}).
+
+  let transitSection = ''
+  if (transits && transits.planets.length > 0) {
+    const planetLines = transits.planets
+      .map(
+        (p) =>
+          `  - ${p.name} in ${p.sign} at ${p.degree.toFixed(2)}° (nakshatra: ${p.nakshatra})${p.retrograde ? ' [retrograde]' : ''}`
+      )
+      .join('\n')
+    transitSection = `\n\nCurrent planetary positions for ${today}:\n${planetLines}\n\nReference specific transits above when writing the horoscope. Mention at least two planets by name and explain how their positions influence ${sign.name} today.`
+  }
+
+  return `Today's date is ${today}. Generate today's horoscope for ${sign.name} (${sign.dates}, ${sign.element} sign, ruled by ${sign.rulingPlanet}).${transitSection}
 
 Return ONLY valid JSON with no other text:
 {
@@ -48,14 +64,14 @@ export function parseHoroscopeResponse(raw: string): HoroscopeFields | null {
   }
 }
 
-export async function generateHoroscope(sign: ZodiacSign): Promise<HoroscopeFields | null> {
+export async function generateHoroscope(sign: ZodiacSign, transits?: TransitData): Promise<HoroscopeFields | null> {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   const model = process.env.HOROSCOPE_MODEL || 'gpt-4o-mini'
 
   const response = await client.chat.completions.create({
     model,
     max_tokens: 512,
-    messages: [{ role: 'user', content: buildHoroscopePrompt(sign) }],
+    messages: [{ role: 'user', content: buildHoroscopePrompt(sign, transits) }],
   })
 
   const text = response.choices[0]?.message?.content
