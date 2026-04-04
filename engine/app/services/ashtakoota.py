@@ -12,6 +12,9 @@ from app.services.vedic_chart import NAKSHATRAS, SANSKRIT_SIGNS
 
 # Varna hierarchy: Brahmin(4) > Kshatriya(3) > Vaishya(2) > Shudra(1)
 # Traditional cyclic assignment across 27 nakshatras
+# Varna cycle per Brihat Parashara Hora Shastra tradition.
+# Repeating pattern: index % 4 → 0=Brahmin, 1=Kshatriya, 2=Vaishya, 3=Shudra
+# (Multiple traditional systems exist; this follows the BPHS cyclic assignment)
 NAKSHATRA_VARNA = {
     "Ashwini": "Vaishya",
     "Bharani": "Shudra",
@@ -110,16 +113,69 @@ NAKSHATRA_YONI = {
     "Revati": "Elephant",
 }
 
-# Yoni enemy pairs score 0
-YONI_ENEMIES = {
-    frozenset(["Horse", "Buffalo"]),
-    frozenset(["Elephant", "Lion"]),
-    frozenset(["Sheep", "Monkey"]),
-    frozenset(["Serpent", "Mongoose"]),
-    frozenset(["Dog", "Deer"]),
-    frozenset(["Cat", "Rat"]),
-    frozenset(["Cow", "Tiger"]),
-}
+# Full Yoni compatibility matrix (14 animals, scores 0-4)
+# Same animal = 4 (handled in _score_yoni)
+# Enemy pairs = 0, Friendly pairs = 3, Unfriendly pairs = 1, default = 2
+YONI_SCORES: dict[frozenset, int] = {}
+
+_YONI_ENEMY_PAIRS = [
+    ("Horse", "Buffalo"),
+    ("Elephant", "Lion"),
+    ("Sheep", "Monkey"),
+    ("Serpent", "Mongoose"),
+    ("Dog", "Deer"),
+    ("Cat", "Rat"),
+    ("Cow", "Tiger"),
+]
+
+_YONI_FRIENDLY_PAIRS = [
+    ("Horse", "Deer"),
+    ("Horse", "Monkey"),
+    ("Elephant", "Cow"),
+    ("Elephant", "Sheep"),
+    ("Sheep", "Deer"),
+    ("Serpent", "Cat"),
+    ("Serpent", "Dog"),
+    ("Dog", "Cat"),
+    ("Rat", "Monkey"),
+    ("Rat", "Dog"),
+    ("Cow", "Buffalo"),
+    ("Tiger", "Lion"),
+    ("Tiger", "Deer"),
+    ("Deer", "Sheep"),
+    ("Monkey", "Horse"),
+    ("Monkey", "Rat"),
+    ("Mongoose", "Cat"),
+    ("Mongoose", "Dog"),
+    ("Lion", "Tiger"),
+    ("Lion", "Elephant"),
+]
+
+_YONI_UNFRIENDLY_PAIRS = [
+    ("Horse", "Cow"),
+    ("Elephant", "Tiger"),
+    ("Cat", "Monkey"),
+    ("Rat", "Elephant"),
+    ("Buffalo", "Tiger"),
+    ("Deer", "Serpent"),
+    ("Monkey", "Cow"),
+    ("Lion", "Buffalo"),
+    ("Mongoose", "Rat"),
+    ("Sheep", "Cat"),
+]
+
+for _a, _b in _YONI_ENEMY_PAIRS:
+    YONI_SCORES[frozenset([_a, _b])] = 0
+
+for _a, _b in _YONI_FRIENDLY_PAIRS:
+    _key = frozenset([_a, _b])
+    if _key not in YONI_SCORES:  # don't overwrite enemy entries
+        YONI_SCORES[_key] = 3
+
+for _a, _b in _YONI_UNFRIENDLY_PAIRS:
+    _key = frozenset([_a, _b])
+    if _key not in YONI_SCORES:
+        YONI_SCORES[_key] = 1
 
 # Gana for each nakshatra
 NAKSHATRA_GANA = {
@@ -282,12 +338,18 @@ def _score_yoni(user_nak: str, partner_nak: str) -> tuple[float, str]:
         return 4, f"Yoni: same animal ({u_animal}) - excellent sexual and physical compatibility."
 
     pair = frozenset([u_animal, p_animal])
-    if pair in YONI_ENEMIES:
-        return 0, f"Yoni: enemy animals ({u_animal} and {p_animal}) - significant physical incompatibility."
+    score = YONI_SCORES.get(pair, 2)  # default 2 for unspecified neutral pairs
 
-    # Friendly = 3, neutral = 2, unfriendly = 1
-    # Simplified: non-enemy, non-same → assign 2 (neutral) as default
-    return 2, f"Yoni: {u_animal} (user) and {p_animal} (partner) - moderate physical compatibility."
+    if score == 0:
+        desc = f"Yoni: enemy animals ({u_animal} and {p_animal}) - significant physical incompatibility."
+    elif score == 1:
+        desc = f"Yoni: {u_animal} (user) and {p_animal} (partner) - mild physical incompatibility."
+    elif score == 3:
+        desc = f"Yoni: {u_animal} (user) and {p_animal} (partner) - good physical compatibility."
+    else:
+        desc = f"Yoni: {u_animal} (user) and {p_animal} (partner) - moderate physical compatibility."
+
+    return score, desc
 
 
 def _score_graha_maitri(user_nak: str, partner_nak: str) -> tuple[float, str]:
