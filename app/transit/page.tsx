@@ -67,6 +67,7 @@ export default async function TransitPage() {
               name: p.name,
               sign: p.sign,
               degree: p.degree,
+              house: p.house ?? 1,
             })),
             moon_sign: moonSign,
           }),
