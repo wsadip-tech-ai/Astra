@@ -25,9 +25,6 @@ SIGN_ELEMENTS: dict[str, str] = {
     "Karka": "Water", "Vrishchika": "Water", "Meena": "Water",
 }
 
-VEDHA_SUN = {3: 9, 6: 12, 10: 4, 11: 5}
-VEDHA_JUPITER = {2: 12, 5: 4, 7: 3, 9: 10, 11: 8}
-
 FAVORABLE_TRANSITS = {
     "Sun": {3, 6, 10, 11},
     "Moon": {1, 3, 6, 7, 10, 11},
