@@ -89,6 +89,11 @@ export default function Navbar() {
             </Link>
           )}
           {isAuthed && (
+            <Link href="/yearly" className="text-muted hover:text-star text-sm transition-colors">
+              Yearly
+            </Link>
+          )}
+          {isAuthed && (
             <Link href="/vaastu" className="text-muted hover:text-star text-sm transition-colors">
               Vaastu
             </Link>
@@ -144,6 +149,7 @@ export default function Navbar() {
             <>
               <Link href="/chat" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Chat with Astra</Link>
               <Link href="/transit" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Transits</Link>
+              <Link href="/yearly" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Yearly</Link>
               <Link href="/vaastu" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Vaastu</Link>
             </>
           )}
