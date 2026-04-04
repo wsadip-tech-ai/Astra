@@ -31,6 +31,8 @@ def _sign_index(sign: str) -> int:
 
 # Kendra distances in 0-based terms: 0 (same), 3, 6, 9
 _KENDRA_DISTANCES = {0, 3, 6, 9}
+# Upachaya distances in 0-based terms: houses 3, 6, 10, 11 → distances 2, 5, 9, 10
+_UPACHAYA_DISTANCES = {2, 5, 9, 10}
 
 
 def detect_yogas(planets: list[dict], lagna_sign: str) -> list[dict]:
@@ -49,8 +51,6 @@ def detect_yogas(planets: list[dict], lagna_sign: str) -> list[dict]:
     mercury = _get_planet(planets, "Mercury")
     jupiter = _get_planet(planets, "Jupiter")
     venus = _get_planet(planets, "Venus")
-    saturn = _get_planet(planets, "Saturn")  # noqa: F841 — reserved for future yogas
-
     yogas = []
 
     # 1. Gaja Kesari Yoga: Jupiter in Kendra (1/4/7/10) from Moon
@@ -93,8 +93,6 @@ def detect_yogas(planets: list[dict], lagna_sign: str) -> list[dict]:
     yogas.append({"name": "Lakshmi Yoga", "present": lk_present, "strength": lk_strength, "interpretation": lk_interp})
 
     # 3. Vasumati Yoga: Benefics in upachaya houses (3, 6, 10, 11) from Moon
-    # Upachaya distances in 0-based terms: 2, 5, 9, 10
-    _UPACHAYA_DISTANCES = {2, 5, 9, 10}
     vm_present = False
     vm_strength = "none"
     vm_interp = "Vasumati Yoga is not formed in this chart."
