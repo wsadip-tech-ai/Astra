@@ -46,6 +46,51 @@ interface LifeAreaEntry {
   planets: { planet: string; house: number; tone: string; summary: string }[]
 }
 
+interface AlertRemedy {
+  mantra?: string
+  gemstone?: string
+  charity?: string
+  practice?: string
+}
+
+interface HighImpactAlert {
+  planet: string
+  house: number
+  sign: string
+  type: string
+  impact_score: number
+  life_areas: string[]
+  headline: string
+  detail: string
+  remedy: AlertRemedy
+  is_favorable: boolean
+}
+
+interface LifeScore {
+  outlook: string
+  verdict: string
+}
+
+interface TimelineEntry {
+  planet: string
+  start: string
+  end: string
+  nature: string
+  description: string
+}
+
+interface HighImpact {
+  alerts: HighImpactAlert[]
+  life_scores: Record<string, LifeScore>
+  timeline: TimelineEntry[]
+}
+
+interface UpcomingAntardasha {
+  planet: string
+  start: string
+  end: string
+}
+
 export interface TransitViewProps {
   transits: {
     date: string
@@ -59,6 +104,7 @@ export interface TransitViewProps {
     transit_houses: Record<string, number>
   } | null
   interpreted: {
+    high_impact?: HighImpact | null
     planet_interpretations: PlanetInterpretation[]
     life_area_summary: Record<string, LifeAreaEntry>
     favorable_count: number
@@ -69,16 +115,10 @@ export interface TransitViewProps {
     current_mahadasha: { planet: string; start: string; end: string }
     current_antardasha: { planet: string; start: string; end: string }
   } | null
+  upcomingAntardashas?: UpcomingAntardasha[]
 }
 
 /* ─── Constants ─── */
-
-const ELEMENT_COLORS: Record<string, string> = {
-  Fire: 'bg-orange-500/20 text-orange-300',
-  Earth: 'bg-emerald-500/20 text-emerald-300',
-  Air: 'bg-sky-500/20 text-sky-300',
-  Water: 'bg-blue-500/20 text-blue-300',
-}
 
 const MURTHI_STYLES: Record<string, { bg: string; label: string }> = {
   Gold: { bg: 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/25', label: 'Gold Murthi' },
@@ -95,30 +135,24 @@ const ASPECT_LABELS: Record<string, { label: string; color: string }> = {
   sextile: { label: 'Sextile', color: 'text-sky-400' },
 }
 
-const OUTLOOK_STYLES: Record<string, string> = {
-  favorable: 'bg-green-500/15 text-green-400',
-  challenging: 'bg-rose/15 text-rose',
-  mixed: 'bg-yellow-400/15 text-yellow-400',
-}
-
 const LIFE_AREA_ICONS: Record<string, React.ReactNode> = {
   'Finance & Career': (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.306a11.95 11.95 0 015.814-5.518l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" />
     </svg>
   ),
   'Relationships & Family': (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
     </svg>
   ),
   'Health & Wellbeing': (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
     </svg>
   ),
   'Spirituality & Growth': (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
     </svg>
   ),
@@ -143,9 +177,9 @@ const fadeUp = {
   show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: 'easeOut' as const } },
 }
 
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.95 },
-  show: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: 'easeOut' as const } },
+const slideIn = {
+  hidden: { opacity: 0, x: -24 },
+  show: { opacity: 1, x: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
 }
 
 /* ─── Sub-components ─── */
@@ -164,37 +198,142 @@ function ChevronIcon({ open }: { open: boolean }) {
   )
 }
 
-function OutlookBadge({ outlook, size = 'sm' }: { outlook: string; size?: 'sm' | 'md' }) {
-  const key = outlook.toLowerCase()
-  const style = OUTLOOK_STYLES[key] ?? OUTLOOK_STYLES.mixed
-  const label = key.charAt(0).toUpperCase() + key.slice(1)
-  const sizeClass = size === 'md' ? 'text-sm px-4 py-1.5' : 'text-xs px-3 py-1'
+/* ─── Alert Card ─── */
+
+function AlertCard({ alert, index }: { alert: HighImpactAlert; index: number }) {
+  const [remedyOpen, setRemedyOpen] = useState(false)
+  const isFavorable = alert.is_favorable
+  const stripColor = isFavorable ? 'bg-emerald-500' : 'bg-rose'
+  const glowColor = isFavorable ? 'bg-emerald-500/5' : 'bg-rose/5'
+
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full font-medium ${style} ${sizeClass}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${key === 'favorable' ? 'bg-green-400' : key === 'challenging' ? 'bg-rose' : 'bg-yellow-400'}`} />
-      {label}
-    </span>
+    <motion.div
+      variants={slideIn}
+      custom={index}
+      className={`relative rounded-xl overflow-hidden border border-white/5 ${glowColor}`}
+    >
+      {/* Left color strip */}
+      <div className={`absolute left-0 top-0 bottom-0 w-1 ${stripColor}`} />
+
+      <div className="pl-5 pr-5 py-5">
+        {/* Headline */}
+        <h3 className="font-display text-lg text-star leading-snug mb-2">
+          {alert.headline}
+        </h3>
+
+        {/* Life area tags */}
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {alert.life_areas.map(area => (
+            <span
+              key={area}
+              className="text-[10px] uppercase tracking-wide font-medium text-violet-light bg-violet/10 rounded-full px-2.5 py-0.5"
+            >
+              {area}
+            </span>
+          ))}
+          <span className={`text-[10px] uppercase tracking-wide font-medium rounded-full px-2.5 py-0.5 ${
+            isFavorable ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose/15 text-rose'
+          }`}>
+            {alert.type === 'opportunity' ? 'Opportunity' : 'Needs Attention'}
+          </span>
+        </div>
+
+        {/* One-line detail */}
+        <p className="text-muted text-sm leading-relaxed mb-3">
+          {alert.detail}
+        </p>
+
+        {/* Remedy toggle */}
+        {alert.remedy && (
+          <>
+            <button
+              onClick={() => setRemedyOpen(!remedyOpen)}
+              className="flex items-center gap-1.5 text-xs text-violet-light hover:text-star transition-colors cursor-pointer"
+              aria-expanded={remedyOpen}
+            >
+              <span className="font-medium">{remedyOpen ? 'Hide Remedies' : 'View Remedies'}</span>
+              <ChevronIcon open={remedyOpen} />
+            </button>
+
+            <AnimatePresence initial={false}>
+              {remedyOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-3 pt-3 border-t border-white/5">
+                    {alert.remedy.mantra && (
+                      <div className="flex items-start gap-2.5 bg-cosmos rounded-lg px-3.5 py-2.5">
+                        <span className="text-base mt-0.5 shrink-0" aria-hidden="true">{'\ud83e\udeb7'}</span>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-muted font-medium mb-0.5">Mantra</p>
+                          <p className="text-star text-xs leading-relaxed">{alert.remedy.mantra}</p>
+                        </div>
+                      </div>
+                    )}
+                    {alert.remedy.gemstone && (
+                      <div className="flex items-start gap-2.5 bg-cosmos rounded-lg px-3.5 py-2.5">
+                        <span className="text-base mt-0.5 shrink-0" aria-hidden="true">{'\ud83d\udc8e'}</span>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-muted font-medium mb-0.5">Gemstone</p>
+                          <p className="text-star text-xs leading-relaxed">{alert.remedy.gemstone}</p>
+                        </div>
+                      </div>
+                    )}
+                    {alert.remedy.charity && (
+                      <div className="flex items-start gap-2.5 bg-cosmos rounded-lg px-3.5 py-2.5">
+                        <span className="text-base mt-0.5 shrink-0" aria-hidden="true">{'\ud83d\ude4f'}</span>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-muted font-medium mb-0.5">Charity</p>
+                          <p className="text-star text-xs leading-relaxed">{alert.remedy.charity}</p>
+                        </div>
+                      </div>
+                    )}
+                    {alert.remedy.practice && (
+                      <div className="flex items-start gap-2.5 bg-cosmos rounded-lg px-3.5 py-2.5">
+                        <span className="text-base mt-0.5 shrink-0" aria-hidden="true">{'\u2728'}</span>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider text-muted font-medium mb-0.5">Practice</p>
+                          <p className="text-star text-xs leading-relaxed">{alert.remedy.practice}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        )}
+      </div>
+    </motion.div>
   )
 }
 
-function FavorableIndicator({ count, type }: { count: number; type: 'favorable' | 'challenging' }) {
-  const isFav = type === 'favorable'
+/* ─── Life Score Card ─── */
+
+function LifeScoreCard({ area, score }: { area: string; score: LifeScore | undefined }) {
+  const icon = LIFE_AREA_ICONS[area]
+  const outlook = score?.outlook?.toLowerCase() ?? 'mixed'
+  const dotColor = outlook === 'favorable' ? 'bg-emerald-400' : outlook === 'challenging' ? 'bg-rose' : 'bg-yellow-400'
+
   return (
-    <div className={`flex items-center gap-2 ${isFav ? 'text-green-400' : 'text-rose'}`}>
-      {isFav ? (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-        </svg>
-      ) : (
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-        </svg>
-      )}
-      <span className="text-sm font-medium">{count}</span>
-      <span className="text-xs text-muted">{isFav ? 'Supportive' : 'Challenging'}</span>
+    <div className="bg-nebula rounded-xl p-4 border border-white/5 hover:border-violet/15 transition-colors">
+      <div className="flex items-center gap-2.5 mb-2">
+        <div className="text-violet-light/70">{icon}</div>
+        <h3 className="text-star text-xs font-semibold truncate">{area}</h3>
+        <span className={`w-2 h-2 rounded-full shrink-0 ml-auto ${dotColor}`} />
+      </div>
+      <p className="text-muted text-xs leading-relaxed line-clamp-2">
+        {score?.verdict ?? 'No significant transits'}
+      </p>
     </div>
   )
 }
+
+/* ─── Planet Card (for detailed analysis) ─── */
 
 function PlanetCard({ interp, defaultOpen = false }: { interp: PlanetInterpretation; defaultOpen?: boolean }) {
   const [expanded, setExpanded] = useState(defaultOpen)
@@ -205,15 +344,12 @@ function PlanetCard({ interp, defaultOpen = false }: { interp: PlanetInterpretat
       variants={fadeUp}
       className={`bg-cosmos rounded-xl p-4 border-l-2 ${borderColor} border border-l-2 border-white/5`}
     >
-      {/* Planet Header */}
       <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center gap-3">
-          <div>
-            <h4 className="text-star font-semibold text-sm">{interp.planet}</h4>
-            <p className="text-violet-light text-xs">
-              {interp.sign} &middot; House {interp.house}
-            </p>
-          </div>
+        <div>
+          <h4 className="text-star font-semibold text-sm">{interp.planet}</h4>
+          <p className="text-violet-light text-xs">
+            {interp.sign} &middot; House {interp.house}
+          </p>
         </div>
         <span
           className={`text-xs font-medium rounded-full px-2.5 py-0.5 ${
@@ -224,10 +360,8 @@ function PlanetCard({ interp, defaultOpen = false }: { interp: PlanetInterpretat
         </span>
       </div>
 
-      {/* Summary */}
       <p className="text-muted text-sm leading-relaxed mb-3">{interp.summary}</p>
 
-      {/* Life area tags */}
       <div className="flex flex-wrap gap-1.5 mb-3">
         {interp.life_areas.map(area => (
           <span key={area} className="text-[11px] text-violet-light bg-violet/10 rounded-full px-2.5 py-0.5">
@@ -236,7 +370,6 @@ function PlanetCard({ interp, defaultOpen = false }: { interp: PlanetInterpretat
         ))}
       </div>
 
-      {/* Retrograde note */}
       {interp.retrograde_note && (
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3.5 py-2.5 mb-3">
           <p className="text-amber-400 text-xs font-medium mb-0.5">Retrograde Effect</p>
@@ -244,7 +377,6 @@ function PlanetCard({ interp, defaultOpen = false }: { interp: PlanetInterpretat
         </div>
       )}
 
-      {/* Dasha connection */}
       {interp.dasha_connection && (
         <div className="bg-violet/10 border border-violet/20 rounded-lg px-3.5 py-2.5 mb-3">
           <p className="text-violet-light text-xs font-medium mb-0.5">Dasha Connection</p>
@@ -252,7 +384,6 @@ function PlanetCard({ interp, defaultOpen = false }: { interp: PlanetInterpretat
         </div>
       )}
 
-      {/* Expand/Collapse */}
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex items-center gap-1.5 text-xs text-muted hover:text-violet-light transition-colors cursor-pointer mt-1"
@@ -281,10 +412,18 @@ function PlanetCard({ interp, defaultOpen = false }: { interp: PlanetInterpretat
   )
 }
 
+/* ─── Timeline Entry ─── */
+
+function TimelineDot({ nature }: { nature: string }) {
+  const n = nature.toLowerCase()
+  const color = n === 'favorable' ? 'bg-emerald-400 shadow-emerald-400/40' : n === 'challenging' ? 'bg-rose shadow-rose/40' : 'bg-yellow-400 shadow-yellow-400/40'
+  return <div className={`w-2.5 h-2.5 rounded-full shadow-lg shrink-0 ${color}`} />
+}
+
 /* ─── Main Component ─── */
 
-export default function TransitView({ transits, personal, interpreted, dasha }: TransitViewProps) {
-  const [showAllPlanets, setShowAllPlanets] = useState(false)
+export default function TransitView({ transits, personal, interpreted, dasha, upcomingAntardashas }: TransitViewProps) {
+  const [detailOpen, setDetailOpen] = useState(false)
 
   const dateFormatted = new Date(transits.date + 'T00:00:00').toLocaleDateString('en-US', {
     weekday: 'long',
@@ -293,288 +432,368 @@ export default function TransitView({ transits, personal, interpreted, dasha }: 
     day: 'numeric',
   })
 
-  const elementClass = ELEMENT_COLORS[transits.dominant_element] ?? 'bg-violet/20 text-violet-light'
   const murthi = personal?.murthi_nirnaya
     ? MURTHI_STYLES[personal.murthi_nirnaya] ?? MURTHI_STYLES.Iron
     : null
 
-  const hasInterpreted = !!interpreted
+  const highImpact = interpreted?.high_impact ?? null
+  const hasAlerts = highImpact && highImpact.alerts && highImpact.alerts.length > 0
+
+  // Build timeline: prefer high_impact.timeline, fallback to upcomingAntardashas
+  const timeline: TimelineEntry[] = highImpact?.timeline && highImpact.timeline.length > 0
+    ? highImpact.timeline
+    : (upcomingAntardashas ?? []).map(ad => ({
+        planet: ad.planet,
+        start: ad.start,
+        end: ad.end,
+        nature: 'mixed',
+        description: `${ad.planet} Antardasha period`,
+      }))
 
   return (
     <motion.div
       variants={stagger}
       initial="hidden"
       animate="show"
-      className="space-y-10"
+      className="space-y-8"
     >
-      {/* ═══ 1. Header ═══ */}
-      <motion.div variants={fadeUp}>
-        <p className="text-violet-light text-xs font-semibold tracking-widest uppercase mb-2">
-          Planetary Transits
-        </p>
-        <h1 className="font-display text-4xl md:text-5xl text-star mb-3">
-          Today&apos;s Cosmic Sky
-        </h1>
-        <div className="flex flex-wrap items-center gap-3">
+      {/* ═══ 1. Compact Header ═══ */}
+      <motion.div variants={fadeUp} className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="font-display text-3xl text-star mb-1">
+            Your Cosmic Forecast
+          </h1>
           <p className="text-muted text-sm">{dateFormatted}</p>
-          <span className={`text-xs font-medium rounded-full px-3 py-1 ${elementClass}`}>
-            {transits.dominant_element} dominant
-          </span>
-          {hasInterpreted && (
-            <OutlookBadge
-              outlook={
-                interpreted.favorable_count > interpreted.challenging_count
-                  ? 'favorable'
-                  : interpreted.challenging_count > interpreted.favorable_count
-                    ? 'challenging'
-                    : 'mixed'
-              }
-              size="sm"
-            />
+        </div>
+        <div className="flex items-center gap-2.5 shrink-0">
+          {murthi && (
+            <span className={`text-xs font-medium rounded-full px-3 py-1 ${murthi.bg}`}>
+              {murthi.label}
+            </span>
           )}
         </div>
       </motion.div>
 
-      {/* ═══ 2. Overall Outlook Card ═══ */}
-      {hasInterpreted && (
+      {/* ═══ 2. Alert Cards (TOP PRIORITY) ═══ */}
+      {hasAlerts && (
+        <motion.section variants={stagger} initial="hidden" animate="show" className="space-y-3">
+          {highImpact.alerts.map((alert, i) => (
+            <AlertCard key={`${alert.planet}-${alert.house}`} alert={alert} index={i} />
+          ))}
+        </motion.section>
+      )}
+
+      {/* ═══ 3. Dasha Period Bar ═══ */}
+      {dasha && (
         <motion.div
-          variants={scaleIn}
-          className="bg-nebula rounded-xl p-6 border border-white/5 relative overflow-hidden"
+          variants={fadeUp}
+          className="bg-nebula rounded-xl px-5 py-3.5 border border-white/5 flex items-center justify-between gap-4 flex-wrap"
         >
-          {/* Subtle glow accent */}
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-violet/10 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="relative">
-            <h2 className="text-star font-display text-lg mb-3">Overall Outlook</h2>
-            <p className="text-muted text-sm leading-relaxed mb-5">{interpreted.overall_outlook}</p>
-
-            <div className="flex flex-wrap items-center gap-6">
-              <FavorableIndicator count={interpreted.favorable_count} type="favorable" />
-              <FavorableIndicator count={interpreted.challenging_count} type="challenging" />
-
-              {/* Divider */}
-              <div className="hidden sm:block w-px h-6 bg-white/10" />
-
-              {/* Murthi badge */}
-              {murthi && (
-                <span className={`text-xs font-medium rounded-full px-3 py-1 ${murthi.bg}`}>
-                  {murthi.label}
-                </span>
-              )}
-            </div>
-
-            {/* Dasha period */}
-            {dasha && (
-              <div className="mt-5 pt-4 border-t border-white/5">
-                <p className="text-xs text-muted mb-2 font-medium uppercase tracking-wider">Current Dasha Period</p>
-                <div className="flex flex-wrap gap-3">
-                  <span className="text-xs bg-violet/15 text-violet-light rounded-full px-3 py-1">
-                    Mahadasha: {dasha.current_mahadasha.planet}
-                  </span>
-                  <span className="text-xs bg-violet/10 text-violet-light/80 rounded-full px-3 py-1">
-                    Antardasha: {dasha.current_antardasha.planet}
-                  </span>
-                </div>
-              </div>
-            )}
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-violet-light shrink-0" />
+            <span className="text-star text-sm font-medium">
+              {dasha.current_mahadasha.planet} Mahadasha
+            </span>
+            <span className="text-muted text-sm">&middot;</span>
+            <span className="text-star text-sm">
+              {dasha.current_antardasha.planet} Antardasha
+            </span>
+          </div>
+          <div className="text-muted text-xs">
+            {new Date(dasha.current_antardasha.start).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+            {' \u2014 '}
+            {new Date(dasha.current_antardasha.end).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
           </div>
         </motion.div>
       )}
 
-      {/* ═══ 3. Life Area Summary Cards ═══ */}
-      {hasInterpreted && (
+      {/* ═══ 4. Life Area Scores (compact 4-column) ═══ */}
+      {highImpact?.life_scores && (
         <motion.section variants={fadeUp}>
-          <h2 className="text-star font-display text-lg mb-4">Life Areas</h2>
           <motion.div
             variants={stagger}
             initial="hidden"
             animate="show"
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+            className="grid grid-cols-2 lg:grid-cols-4 gap-3"
           >
-            {LIFE_AREA_ORDER.map(area => {
-              const data = interpreted.life_area_summary[area]
-              const icon = LIFE_AREA_ICONS[area]
-
-              return (
-                <motion.div
-                  key={area}
-                  variants={fadeUp}
-                  className="bg-nebula rounded-xl p-5 border border-white/5 hover:border-violet/15 transition-colors"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="text-violet-light/70">{icon}</div>
-                      <h3 className="text-star text-sm font-semibold">{area}</h3>
-                    </div>
-                    {data && <OutlookBadge outlook={data.outlook} />}
-                  </div>
-
-                  {data && data.planets.length > 0 ? (
-                    <ul className="space-y-2.5">
-                      {data.planets.map(p => (
-                        <li key={p.planet} className="flex items-start gap-2">
-                          <span className={`mt-0.5 w-1.5 h-1.5 rounded-full shrink-0 ${
-                            p.tone === 'supportive' || p.tone === 'favorable'
-                              ? 'bg-green-400'
-                              : p.tone === 'challenging'
-                                ? 'bg-rose'
-                                : 'bg-yellow-400'
-                          }`} />
-                          <div>
-                            <span className="text-star text-xs font-medium">{p.planet}</span>
-                            <span className="text-muted text-xs"> &middot; House {p.house}</span>
-                            <p className="text-muted text-xs leading-relaxed mt-0.5">{p.summary}</p>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-muted/60 text-xs italic">No significant transits in this area</p>
-                  )}
-                </motion.div>
-              )
-            })}
-          </motion.div>
-        </motion.section>
-      )}
-
-      {/* ═══ 4. Detailed Planet Interpretations ═══ */}
-      {hasInterpreted && interpreted.planet_interpretations.length > 0 && (
-        <motion.section variants={fadeUp}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-star font-display text-lg">Detailed Planet Readings</h2>
-            <button
-              onClick={() => setShowAllPlanets(!showAllPlanets)}
-              className="text-xs text-violet-light hover:text-violet transition-colors cursor-pointer"
-            >
-              {showAllPlanets ? 'Collapse all' : 'Show all'}
-            </button>
-          </div>
-
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            animate="show"
-            className="space-y-3"
-          >
-            {interpreted.planet_interpretations.map((interp, i) => (
-              <PlanetCard key={interp.planet} interp={interp} defaultOpen={showAllPlanets || i === 0} />
-            ))}
-          </motion.div>
-        </motion.section>
-      )}
-
-      {/* ═══ 5. Planet Position Grid (reference) ═══ */}
-      <motion.section variants={fadeUp}>
-        <div className="border-t border-white/5 pt-8">
-          <h2 className="text-star font-display text-lg mb-1">Planetary Positions</h2>
-          <p className="text-muted text-xs mb-4">Current sidereal positions of all planets</p>
-
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            animate="show"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
-          >
-            {transits.planets.map(planet => (
-              <motion.div
-                key={planet.name}
-                variants={fadeUp}
-                className="bg-cosmos border border-white/5 rounded-xl p-4 hover:border-violet/20 transition-colors"
-              >
-                <div className="flex items-start justify-between mb-1.5">
-                  <p className="text-star font-semibold text-sm">{planet.name}</p>
-                  {planet.retrograde && (
-                    <span className="bg-rose/20 text-rose text-[10px] rounded-full px-2 py-0.5 font-medium">
-                      Rx
-                    </span>
-                  )}
-                </div>
-                <p className="text-violet-light text-xs">
-                  {planet.sign} {planet.degree.toFixed(1)}&deg;
-                </p>
-                <p className="text-muted text-[11px] mt-0.5">
-                  {planet.nakshatra} &middot; Pada {planet.pada}
-                </p>
+            {LIFE_AREA_ORDER.map(area => (
+              <motion.div key={area} variants={fadeUp}>
+                <LifeScoreCard area={area} score={highImpact.life_scores[area]} />
               </motion.div>
             ))}
           </motion.div>
-        </div>
-      </motion.section>
-
-      {/* ═══ 6. Personal Aspects ═══ */}
-      {personal && (
-        <motion.section
-          variants={fadeUp}
-          className="border-t border-white/5 pt-8 space-y-8"
-        >
-          <div className="flex flex-wrap items-center gap-4">
-            <div>
-              <h2 className="text-star font-display text-lg mb-0.5">Your Personal Transits</h2>
-              <p className="text-muted text-xs">
-                How today&apos;s sky aspects your natal chart
-              </p>
-            </div>
-            {!hasInterpreted && murthi && (
-              <span className={`text-xs font-medium rounded-full px-3 py-1 ${murthi.bg}`}>
-                {murthi.label}
-              </span>
-            )}
-          </div>
-
-          {/* Transit Aspects */}
-          {personal.transit_aspects.length > 0 && (
-            <div>
-              <h3 className="text-star text-sm font-semibold mb-3">Transit Aspects</h3>
-              <div className="bg-cosmos border border-white/5 rounded-xl divide-y divide-white/5 overflow-hidden">
-                {personal.transit_aspects.map((asp, i) => {
-                  const aspectInfo = ASPECT_LABELS[asp.aspect_type] ?? {
-                    label: asp.aspect_type,
-                    color: 'text-muted',
-                  }
-                  return (
-                    <div key={i} className="flex items-center gap-3 px-5 py-3.5">
-                      <span className="text-star text-sm font-medium w-20 shrink-0">
-                        {asp.transit_planet}
-                      </span>
-                      <span className={`text-xs font-medium ${aspectInfo.color}`}>
-                        {aspectInfo.label}
-                      </span>
-                      <span className="text-muted text-xs">&rarr;</span>
-                      <span className="text-star text-sm">{asp.natal_planet}</span>
-                      <span className="text-muted text-xs ml-auto">
-                        {asp.orb.toFixed(1)}&deg; orb
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Vedha Flags */}
-          {personal.vedha_flags.length > 0 && (
-            <div>
-              <h3 className="text-star text-sm font-semibold mb-3">Vedha Obstructions</h3>
-              <div className="space-y-3">
-                {personal.vedha_flags.map((v, i) => (
-                  <div
-                    key={i}
-                    className="bg-rose/10 border border-rose/20 rounded-xl px-5 py-4"
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-rose text-sm font-semibold">{v.planet}</span>
-                      <span className="text-muted text-xs">
-                        House {v.favorable_house} obstructed by {v.obstructed_by}
-                      </span>
-                    </div>
-                    <p className="text-muted text-xs">{v.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </motion.section>
+      )}
+
+      {/* ═══ 5. Upcoming Shifts Timeline ═══ */}
+      {timeline.length > 0 && (
+        <motion.section variants={fadeUp}>
+          <h2 className="text-star font-display text-lg mb-4">Upcoming Shifts</h2>
+          <div className="space-y-0">
+            {timeline.map((entry, i) => (
+              <div key={`${entry.planet}-${entry.start}`} className="flex gap-4 items-start">
+                {/* Vertical line + dot */}
+                <div className="flex flex-col items-center pt-1.5">
+                  <TimelineDot nature={entry.nature} />
+                  {i < timeline.length - 1 && (
+                    <div className="w-px flex-1 bg-white/10 min-h-[32px]" />
+                  )}
+                </div>
+                {/* Content */}
+                <div className="pb-5">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-star text-sm font-semibold">{entry.planet}</span>
+                    <span className={`text-[10px] uppercase tracking-wide font-medium rounded-full px-2 py-0.5 ${
+                      entry.nature === 'favorable'
+                        ? 'bg-emerald-500/15 text-emerald-400'
+                        : entry.nature === 'challenging'
+                          ? 'bg-rose/15 text-rose'
+                          : 'bg-yellow-400/15 text-yellow-400'
+                    }`}>
+                      {entry.nature}
+                    </span>
+                  </div>
+                  <p className="text-muted text-xs mb-0.5">{entry.description}</p>
+                  <p className="text-muted/60 text-[11px]">
+                    {new Date(entry.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {' \u2014 '}
+                    {new Date(entry.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+      )}
+
+      {/* ═══ 6. Full Analysis Toggle ═══ */}
+      {interpreted && (
+        <motion.section variants={fadeUp}>
+          <button
+            onClick={() => setDetailOpen(!detailOpen)}
+            className="group flex items-center gap-2 text-sm text-violet-light hover:text-star transition-colors cursor-pointer w-full border-t border-white/5 pt-6"
+          >
+            <span className="font-display text-lg">
+              {detailOpen ? 'Hide Detailed Analysis' : 'View Detailed Planet Analysis'}
+            </span>
+            <svg
+              className={`w-4 h-4 transition-transform duration-300 ${detailOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            </svg>
+          </button>
+
+          <AnimatePresence initial={false}>
+            {detailOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+                className="overflow-hidden"
+              >
+                <div className="space-y-10 pt-6">
+                  {/* Per-planet interpretation cards */}
+                  {interpreted.planet_interpretations.length > 0 && (
+                    <div>
+                      <h3 className="text-star font-display text-base mb-3">Planet Readings</h3>
+                      <motion.div
+                        variants={stagger}
+                        initial="hidden"
+                        animate="show"
+                        className="space-y-3"
+                      >
+                        {interpreted.planet_interpretations.map((interp, i) => (
+                          <PlanetCard key={interp.planet} interp={interp} defaultOpen={i === 0} />
+                        ))}
+                      </motion.div>
+                    </div>
+                  )}
+
+                  {/* Planet Position Grid */}
+                  <div>
+                    <h3 className="text-star font-display text-base mb-1">Planetary Positions</h3>
+                    <p className="text-muted text-xs mb-4">Current sidereal positions</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {transits.planets.map(planet => (
+                        <div
+                          key={planet.name}
+                          className="bg-cosmos border border-white/5 rounded-xl p-4 hover:border-violet/20 transition-colors"
+                        >
+                          <div className="flex items-start justify-between mb-1.5">
+                            <p className="text-star font-semibold text-sm">{planet.name}</p>
+                            {planet.retrograde && (
+                              <span className="bg-rose/20 text-rose text-[10px] rounded-full px-2 py-0.5 font-medium">
+                                Rx
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-violet-light text-xs">
+                            {planet.sign} {planet.degree.toFixed(1)}&deg;
+                          </p>
+                          <p className="text-muted text-[11px] mt-0.5">
+                            {planet.nakshatra} &middot; Pada {planet.pada}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Personal Aspects */}
+                  {personal && (
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-star font-display text-base mb-0.5">Your Personal Transits</h3>
+                        <p className="text-muted text-xs">How today&apos;s sky aspects your natal chart</p>
+                      </div>
+
+                      {personal.transit_aspects.length > 0 && (
+                        <div>
+                          <h4 className="text-star text-sm font-semibold mb-3">Transit Aspects</h4>
+                          <div className="bg-cosmos border border-white/5 rounded-xl divide-y divide-white/5 overflow-hidden">
+                            {personal.transit_aspects.map((asp, i) => {
+                              const aspectInfo = ASPECT_LABELS[asp.aspect_type] ?? { label: asp.aspect_type, color: 'text-muted' }
+                              return (
+                                <div key={i} className="flex items-center gap-3 px-5 py-3.5">
+                                  <span className="text-star text-sm font-medium w-20 shrink-0">{asp.transit_planet}</span>
+                                  <span className={`text-xs font-medium ${aspectInfo.color}`}>{aspectInfo.label}</span>
+                                  <span className="text-muted text-xs">&rarr;</span>
+                                  <span className="text-star text-sm">{asp.natal_planet}</span>
+                                  <span className="text-muted text-xs ml-auto">{asp.orb.toFixed(1)}&deg; orb</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {personal.vedha_flags.length > 0 && (
+                        <div>
+                          <h4 className="text-star text-sm font-semibold mb-3">Vedha Obstructions</h4>
+                          <div className="space-y-3">
+                            {personal.vedha_flags.map((v, i) => (
+                              <div key={i} className="bg-rose/10 border border-rose/20 rounded-xl px-5 py-4">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-rose text-sm font-semibold">{v.planet}</span>
+                                  <span className="text-muted text-xs">
+                                    House {v.favorable_house} obstructed by {v.obstructed_by}
+                                  </span>
+                                </div>
+                                <p className="text-muted text-xs">{v.description}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.section>
+      )}
+
+      {/* ═══ Fallback: No interpreted data — show planet grid + personal aspects directly ═══ */}
+      {!interpreted && (
+        <>
+          {/* Planet Position Grid */}
+          <motion.section variants={fadeUp}>
+            <div className="border-t border-white/5 pt-8">
+              <h2 className="text-star font-display text-lg mb-1">Planetary Positions</h2>
+              <p className="text-muted text-xs mb-4">Current sidereal positions of all planets</p>
+              <motion.div
+                variants={stagger}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+              >
+                {transits.planets.map(planet => (
+                  <motion.div
+                    key={planet.name}
+                    variants={fadeUp}
+                    className="bg-cosmos border border-white/5 rounded-xl p-4 hover:border-violet/20 transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-1.5">
+                      <p className="text-star font-semibold text-sm">{planet.name}</p>
+                      {planet.retrograde && (
+                        <span className="bg-rose/20 text-rose text-[10px] rounded-full px-2 py-0.5 font-medium">
+                          Rx
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-violet-light text-xs">
+                      {planet.sign} {planet.degree.toFixed(1)}&deg;
+                    </p>
+                    <p className="text-muted text-[11px] mt-0.5">
+                      {planet.nakshatra} &middot; Pada {planet.pada}
+                    </p>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
+          </motion.section>
+
+          {/* Personal Aspects (fallback) */}
+          {personal && (
+            <motion.section variants={fadeUp} className="border-t border-white/5 pt-8 space-y-8">
+              <div className="flex flex-wrap items-center gap-4">
+                <div>
+                  <h2 className="text-star font-display text-lg mb-0.5">Your Personal Transits</h2>
+                  <p className="text-muted text-xs">How today&apos;s sky aspects your natal chart</p>
+                </div>
+                {murthi && (
+                  <span className={`text-xs font-medium rounded-full px-3 py-1 ${murthi.bg}`}>
+                    {murthi.label}
+                  </span>
+                )}
+              </div>
+
+              {personal.transit_aspects.length > 0 && (
+                <div>
+                  <h3 className="text-star text-sm font-semibold mb-3">Transit Aspects</h3>
+                  <div className="bg-cosmos border border-white/5 rounded-xl divide-y divide-white/5 overflow-hidden">
+                    {personal.transit_aspects.map((asp, i) => {
+                      const aspectInfo = ASPECT_LABELS[asp.aspect_type] ?? { label: asp.aspect_type, color: 'text-muted' }
+                      return (
+                        <div key={i} className="flex items-center gap-3 px-5 py-3.5">
+                          <span className="text-star text-sm font-medium w-20 shrink-0">{asp.transit_planet}</span>
+                          <span className={`text-xs font-medium ${aspectInfo.color}`}>{aspectInfo.label}</span>
+                          <span className="text-muted text-xs">&rarr;</span>
+                          <span className="text-star text-sm">{asp.natal_planet}</span>
+                          <span className="text-muted text-xs ml-auto">{asp.orb.toFixed(1)}&deg; orb</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {personal.vedha_flags.length > 0 && (
+                <div>
+                  <h3 className="text-star text-sm font-semibold mb-3">Vedha Obstructions</h3>
+                  <div className="space-y-3">
+                    {personal.vedha_flags.map((v, i) => (
+                      <div key={i} className="bg-rose/10 border border-rose/20 rounded-xl px-5 py-4">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-rose text-sm font-semibold">{v.planet}</span>
+                          <span className="text-muted text-xs">
+                            House {v.favorable_house} obstructed by {v.obstructed_by}
+                          </span>
+                        </div>
+                        <p className="text-muted text-xs">{v.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </motion.section>
+          )}
+        </>
       )}
     </motion.div>
   )
