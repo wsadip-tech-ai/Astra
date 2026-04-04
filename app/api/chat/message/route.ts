@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
   // Fetch profile
   const { data: rawProfile } = await supabase
-    .from('profiles')
+    .from('astra_profiles')
     .select('*')
     .eq('id', user.id)
     .single()
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
   // Fetch birth chart
   const { data: chart } = await supabase
-    .from('birth_charts')
+    .from('astra_birth_charts')
     .select('id, date_of_birth, time_of_birth, place_of_birth, western_chart_json, vedic_chart_json')
     .eq('user_id', user.id)
     .limit(1)
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
         // Try to increment daily message count (may fail if column doesn't exist)
         try {
           await supabase
-            .from('profiles')
+            .from('astra_profiles')
             .update({ daily_message_count: messageCount + 1 })
             .eq('id', user.id)
         } catch {

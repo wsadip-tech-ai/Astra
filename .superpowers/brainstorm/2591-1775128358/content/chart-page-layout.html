@@ -1,0 +1,145 @@
+<h2>How should the /chart page be laid out?</h2>
+<p class="subtitle">This is the main birth chart page — where users explore their natal chart</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 20px; font-family: sans-serif;">
+      <!-- Single scroll layout -->
+      <div style="background: #09010f; border-radius: 12px; padding: 16px; space-y: 8px;">
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="color: #c4b5fd; font-size: 10px; text-transform: uppercase; letter-spacing: 2px;">Your Birth Chart</div>
+          <div style="color: #f8fafc; font-size: 16px; margin-top: 4px;">May 15, 1990 · 2:30 PM · Kathmandu</div>
+        </div>
+
+        <!-- Big 3 -->
+        <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+          <div style="flex: 1; background: linear-gradient(135deg, #1e0035, #140025); border: 1px solid #7c3aed66; border-radius: 10px; padding: 10px; text-align: center;">
+            <div style="font-size: 20px;">☉</div>
+            <div style="color: #c4b5fd; font-size: 9px; text-transform: uppercase; margin-top: 2px;">Sun</div>
+            <div style="color: #f8fafc; font-size: 13px; font-weight: 600;">♉ Taurus 24°</div>
+            <div style="color: #6b7280; font-size: 10px;">10th House</div>
+          </div>
+          <div style="flex: 1; background: linear-gradient(135deg, #1e0035, #140025); border: 1px solid #7c3aed66; border-radius: 10px; padding: 10px; text-align: center;">
+            <div style="font-size: 20px;">☽</div>
+            <div style="color: #c4b5fd; font-size: 9px; text-transform: uppercase; margin-top: 2px;">Moon</div>
+            <div style="color: #f8fafc; font-size: 13px; font-weight: 600;">♏ Scorpio 8°</div>
+            <div style="color: #6b7280; font-size: 10px;">4th House</div>
+          </div>
+          <div style="flex: 1; background: linear-gradient(135deg, #1e0035, #140025); border: 1px solid #7c3aed66; border-radius: 10px; padding: 10px; text-align: center;">
+            <div style="font-size: 20px;">↑</div>
+            <div style="color: #c4b5fd; font-size: 9px; text-transform: uppercase; margin-top: 2px;">Rising</div>
+            <div style="color: #f8fafc; font-size: 13px; font-weight: 600;">♎ Libra 15°</div>
+            <div style="color: #6b7280; font-size: 10px;">1st House</div>
+          </div>
+        </div>
+
+        <!-- Remaining planets grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px;">
+          <div style="background: #1e0035; border: 1px solid #ffffff0a; border-radius: 8px; padding: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="color: #ec4899; font-size: 14px;">☿</span>
+              <div>
+                <div style="color: #f8fafc; font-size: 11px;">Mercury · ♉ Taurus 12°</div>
+                <div style="color: #6b7280; font-size: 9px;">10th House</div>
+              </div>
+            </div>
+          </div>
+          <div style="background: #1e0035; border: 1px solid #ffffff0a; border-radius: 8px; padding: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="color: #ec4899; font-size: 14px;">♀</span>
+              <div>
+                <div style="color: #f8fafc; font-size: 11px;">Venus · ♊ Gemini 2°</div>
+                <div style="color: #6b7280; font-size: 9px;">9th House</div>
+              </div>
+            </div>
+          </div>
+          <div style="background: #1e0035; border: 1px solid #ffffff0a; border-radius: 8px; padding: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="color: #ec4899; font-size: 14px;">♂</span>
+              <div>
+                <div style="color: #f8fafc; font-size: 11px;">Mars · ♓ Pisces 18°</div>
+                <div style="color: #6b7280; font-size: 9px;">6th House</div>
+              </div>
+            </div>
+          </div>
+          <div style="background: #1e0035; border: 1px solid #ffffff0a; border-radius: 8px; padding: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="color: #c4b5fd; font-size: 14px;">♃</span>
+              <div>
+                <div style="color: #f8fafc; font-size: 11px;">Jupiter · ♋ Cancer 6°</div>
+                <div style="color: #6b7280; font-size: 9px;">10th House</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Aspects section -->
+        <div style="background: #140025; border: 1px solid #ec489922; border-radius: 8px; padding: 10px;">
+          <div style="color: #ec4899; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Key Aspects</div>
+          <div style="color: #f8fafc; font-size: 11px; line-height: 1.8;">
+            ☉ △ ☽ Trine &nbsp;·&nbsp; ☉ □ ♂ Square &nbsp;·&nbsp; ♀ ☌ ☿ Conjunction<br/>
+            ♃ ⚹ ♀ Sextile &nbsp;·&nbsp; ♄ ☍ ☽ Opposition
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Single Scroll Page</h3>
+      <p>Everything on one page: Big 3 hero cards → planet grid → aspects → (Vedic tab later). Simple, no routing complexity. Users scroll to explore.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 20px; font-family: sans-serif;">
+      <div style="background: #09010f; border-radius: 12px; padding: 16px;">
+        <!-- Header with tabs -->
+        <div style="text-align: center; margin-bottom: 12px;">
+          <div style="color: #c4b5fd; font-size: 10px; text-transform: uppercase; letter-spacing: 2px;">Your Birth Chart</div>
+          <div style="color: #f8fafc; font-size: 14px; margin-top: 4px;">May 15, 1990 · 2:30 PM · Kathmandu</div>
+        </div>
+
+        <!-- Tabs -->
+        <div style="display: flex; gap: 2px; background: #140025; border-radius: 8px; padding: 3px; margin-bottom: 14px;">
+          <div style="flex: 1; background: #7c3aed; border-radius: 6px; padding: 6px; text-align: center; color: #f8fafc; font-size: 11px; font-weight: 600;">Overview</div>
+          <div style="flex: 1; padding: 6px; text-align: center; color: #6b7280; font-size: 11px;">Planets</div>
+          <div style="flex: 1; padding: 6px; text-align: center; color: #6b7280; font-size: 11px;">Aspects</div>
+          <div style="flex: 1; padding: 6px; text-align: center; color: #6b7280; font-size: 11px; position: relative;">
+            Vedic
+            <span style="position: absolute; top: 2px; right: 8px; font-size: 7px; color: #ec4899;">★</span>
+          </div>
+        </div>
+
+        <!-- Overview tab content -->
+        <div style="display: flex; gap: 6px; margin-bottom: 10px;">
+          <div style="flex: 1; background: linear-gradient(135deg, #1e0035, #140025); border: 1px solid #7c3aed66; border-radius: 10px; padding: 10px; text-align: center;">
+            <div style="font-size: 18px;">☉</div>
+            <div style="color: #c4b5fd; font-size: 9px; text-transform: uppercase;">Sun</div>
+            <div style="color: #f8fafc; font-size: 12px; font-weight: 600;">♉ Taurus</div>
+          </div>
+          <div style="flex: 1; background: linear-gradient(135deg, #1e0035, #140025); border: 1px solid #7c3aed66; border-radius: 10px; padding: 10px; text-align: center;">
+            <div style="font-size: 18px;">☽</div>
+            <div style="color: #c4b5fd; font-size: 9px; text-transform: uppercase;">Moon</div>
+            <div style="color: #f8fafc; font-size: 12px; font-weight: 600;">♏ Scorpio</div>
+          </div>
+          <div style="flex: 1; background: linear-gradient(135deg, #1e0035, #140025); border: 1px solid #7c3aed66; border-radius: 10px; padding: 10px; text-align: center;">
+            <div style="font-size: 18px;">↑</div>
+            <div style="color: #c4b5fd; font-size: 9px; text-transform: uppercase;">Rising</div>
+            <div style="color: #f8fafc; font-size: 12px; font-weight: 600;">♎ Libra</div>
+          </div>
+        </div>
+
+        <!-- Summary blurb -->
+        <div style="background: #1e0035; border-radius: 8px; padding: 10px;">
+          <div style="color: #f8fafc; font-size: 11px; line-height: 1.6;">
+            Your Taurus Sun gives you grounded determination, while your Scorpio Moon adds emotional depth and intensity. With Libra rising, you present a harmonious and diplomatic exterior...
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Tabbed Sections</h3>
+      <p>Overview tab (Big 3 + summary) → Planets tab (full grid) → Aspects tab → Vedic tab (premium ★). Organized, less scrolling. Each tab is focused. Vedic tab naturally gated for premium.</p>
+    </div>
+  </div>
+</div>

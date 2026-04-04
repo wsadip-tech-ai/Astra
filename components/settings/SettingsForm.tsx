@@ -47,7 +47,7 @@ export default function SettingsForm({ email, name: initialName, tier, chart }: 
     }
 
     const { error } = await supabase
-      .from('profiles')
+      .from('astra_profiles')
       .update({ name })
       .eq('id', session.user.id)
 
@@ -73,7 +73,7 @@ export default function SettingsForm({ email, name: initialName, tier, chart }: 
 
     if (chart) {
       // Delete old chart and regenerate (to recalculate via FastAPI)
-      await supabase.from('birth_charts').delete().eq('id', chart.id)
+      await supabase.from('astra_birth_charts').delete().eq('id', chart.id)
     }
 
     // Call the generate endpoint which geocodes + calculates charts

@@ -19,7 +19,7 @@ export async function GET(
 
   // Check cache
   const { data: cached } = await supabase
-    .from('horoscopes')
+    .from('astra_horoscopes')
     .select('sign, date, reading, lucky_number, lucky_color, compatibility_sign')
     .eq('sign', sign)
     .eq('date', today)
@@ -49,7 +49,7 @@ export async function GET(
       compatibility_sign: result.compatibility_sign,
     }
 
-    await supabase.from('horoscopes').upsert(row, { onConflict: 'sign,date' })
+    await supabase.from('astra_horoscopes').upsert(row, { onConflict: 'sign,date' })
 
     return NextResponse.json(row)
   } catch {

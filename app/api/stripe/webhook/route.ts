@@ -49,12 +49,12 @@ export async function POST(request: Request) {
     const plan = interval === 'year' ? 'yearly' : 'monthly'
 
     await supabase
-      .from('profiles')
+      .from('astra_profiles')
       .update({ subscription_tier: 'premium', stripe_customer_id: customerId })
       .eq('id', userId)
 
     await supabase
-      .from('subscriptions')
+      .from('astra_subscriptions')
       .upsert(
         {
           user_id: userId,
@@ -72,19 +72,19 @@ export async function POST(request: Request) {
     const subId = subscription.id
 
     const { data: sub } = await supabase
-      .from('subscriptions')
+      .from('astra_subscriptions')
       .select('user_id')
       .eq('stripe_subscription_id', subId)
       .maybeSingle()
 
     if (sub) {
       await supabase
-        .from('subscriptions')
+        .from('astra_subscriptions')
         .update({ status: 'cancelled' })
         .eq('stripe_subscription_id', subId)
 
       await supabase
-        .from('profiles')
+        .from('astra_profiles')
         .update({ subscription_tier: 'free' })
         .eq('id', sub.user_id)
     }
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
     const periodEnd = new Date(subscription.current_period_end * 1000).toISOString()
 
     await supabase
-      .from('subscriptions')
+      .from('astra_subscriptions')
       .update({ status, current_period_end: periodEnd })
       .eq('stripe_subscription_id', subId)
   }

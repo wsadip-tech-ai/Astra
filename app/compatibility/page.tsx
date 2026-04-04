@@ -11,7 +11,7 @@ export default async function CompatibilityPage() {
   if (!user) redirect('/login?next=/compatibility')
 
   const { data: rawProfile } = await supabase
-    .from('profiles')
+    .from('astra_profiles')
     .select('*')
     .eq('id', user.id)
     .single()
@@ -19,7 +19,7 @@ export default async function CompatibilityPage() {
   const profile = rawProfile ? mapProfile(rawProfile as Record<string, unknown>) : null
 
   const { data: chart } = await supabase
-    .from('birth_charts')
+    .from('astra_birth_charts')
     .select('id')
     .eq('user_id', user.id)
     .limit(1)

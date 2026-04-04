@@ -4,92 +4,107 @@
 -- ============================================================
 
 -- 001: Profiles
-create table if not exists public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   name text,
-  subscription_tier text not null default 'free' check (subscription_tier in ('free', 'premium')),
+  subscription_tier text NOT NULL DEFAULT 'free' CHECK (subscription_tier IN ('free', 'premium')),
   stripe_customer_id text,
-  is_admin boolean not null default false,
-  daily_message_count int not null default 0,
-  daily_reset_at date not null default current_date,
-  created_at timestamptz not null default now()
+  is_admin boolean NOT NULL DEFAULT false,
+  daily_message_count int NOT NULL DEFAULT 0,
+  daily_reset_at date NOT NULL DEFAULT current_date,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
-create or replace function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer set search_path = public
-as $$
-begin
-  insert into public.profiles (id, name)
-  values (
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, name)
+  VALUES (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name')
   );
-  return new;
-end;
+  RETURN new;
+END;
 $$;
 
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
-alter table public.profiles enable row level security;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
-create policy if not exists "Users can view own profile"
-  on public.profiles for select
-  using (auth.uid() = id);
+DO $$ BEGIN
+  CREATE POLICY "Users can view own profile"
+    ON public.profiles FOR SELECT
+    USING (auth.uid() = id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-create policy if not exists "Users can update own profile"
-  on public.profiles for update
-  using (auth.uid() = id);
+DO $$ BEGIN
+  CREATE POLICY "Users can update own profile"
+    ON public.profiles FOR UPDATE
+    USING (auth.uid() = id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- 002: Birth Charts
-create table if not exists public.birth_charts (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles(id) on delete cascade,
-  label text not null default 'My Chart',
-  date_of_birth date not null,
+CREATE TABLE IF NOT EXISTS public.birth_charts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  label text NOT NULL DEFAULT 'My Chart',
+  date_of_birth date NOT NULL,
   time_of_birth time,
-  place_of_birth text not null,
-  latitude double precision not null,
-  longitude double precision not null,
-  timezone text not null,
+  place_of_birth text NOT NULL,
+  latitude double precision NOT NULL,
+  longitude double precision NOT NULL,
+  timezone text NOT NULL,
   western_chart_json jsonb,
   vedic_chart_json jsonb,
-  created_at timestamptz not null default now()
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
-alter table public.birth_charts enable row level security;
+ALTER TABLE public.birth_charts ENABLE ROW LEVEL SECURITY;
 
-create policy if not exists "Users can view own charts"
-  on public.birth_charts for select
-  using (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY "Users can view own charts"
+    ON public.birth_charts FOR SELECT
+    USING (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-create policy if not exists "Users can insert own charts"
-  on public.birth_charts for insert
-  with check (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY "Users can insert own charts"
+    ON public.birth_charts FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- 003: Horoscopes
-create table if not exists public.horoscopes (
-  id uuid primary key default gen_random_uuid(),
-  sign text not null,
-  date date not null,
-  reading text not null,
+CREATE TABLE IF NOT EXISTS public.horoscopes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  sign text NOT NULL,
+  date date NOT NULL,
+  reading text NOT NULL,
   lucky_number int,
   lucky_color text,
-  created_at timestamptz not null default now(),
-  unique(sign, date),
-  constraint valid_sign check (sign in ('aries','taurus','gemini','cancer','leo','virgo',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(sign, date),
+  CONSTRAINT valid_sign CHECK (sign IN ('aries','taurus','gemini','cancer','leo','virgo',
                                         'libra','scorpio','sagittarius','capricorn','aquarius','pisces'))
 );
 
-alter table public.horoscopes enable row level security;
+ALTER TABLE public.horoscopes ENABLE ROW LEVEL SECURITY;
 
-create policy if not exists "Horoscopes are publicly readable"
-  on public.horoscopes for select
-  using (true);
+DO $$ BEGIN
+  CREATE POLICY "Horoscopes are publicly readable"
+    ON public.horoscopes FOR SELECT
+    USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- 004: Chat Sessions
 CREATE TABLE IF NOT EXISTS chat_sessions (
@@ -151,7 +166,7 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- Allow service role to write to profiles (for webhook updates)
+-- Service role policies (for webhook and server-side writes)
 DO $$ BEGIN
   CREATE POLICY "Service role can update profiles"
     ON profiles FOR UPDATE
@@ -160,7 +175,6 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- Allow service role to write to horoscopes
 DO $$ BEGIN
   CREATE POLICY "Service role can insert horoscopes"
     ON horoscopes FOR INSERT

@@ -1,0 +1,117 @@
+<h2>Chat with Astra — Layout Options</h2>
+<p class="subtitle">The /chat page where users talk to the AI astrologer</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; font-family: sans-serif;">
+      <div style="background: #09010f; border-radius: 12px; padding: 12px; height: 320px; display: flex; flex-direction: column;">
+        <!-- Header -->
+        <div style="display: flex; align-items: center; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid #ffffff0a;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #ec4899); display: flex; align-items: center; justify-content: center; font-size: 14px;">✦</div>
+          <div>
+            <div style="color: #f8fafc; font-size: 12px; font-weight: 600;">Astra</div>
+            <div style="color: #6b7280; font-size: 9px;">Your personal astrologer</div>
+          </div>
+          <div style="margin-left: auto; background: #1e0035; border-radius: 6px; padding: 3px 8px;">
+            <span style="color: #c4b5fd; font-size: 9px;">2/3 messages today</span>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div style="flex: 1; overflow: hidden; padding: 10px 0; display: flex; flex-direction: column; gap: 8px;">
+          <div style="align-self: flex-end; background: #7c3aed33; border: 1px solid #7c3aed44; border-radius: 12px 12px 4px 12px; padding: 8px 12px; max-width: 75%;">
+            <p style="color: #f8fafc; font-size: 10px; line-height: 1.5;">What does my Moon in Scorpio mean?</p>
+          </div>
+          <div style="align-self: flex-start; display: flex; gap: 6px; max-width: 80%;">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #ec4899); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px;">✦</div>
+            <div style="background: #1e0035; border: 1px solid #ffffff0a; border-radius: 4px 12px 12px 12px; padding: 8px 12px;">
+              <p style="color: #f8fafc; font-size: 10px; line-height: 1.5;">Ah, a Scorpio Moon — the stars reveal deep emotional currents within you. Your Moon in Scorpio suggests intense feelings...</p>
+              <div style="margin-top: 6px; display: flex; align-items: center; gap: 4px;">
+                <div style="width: 16px; height: 16px; border-radius: 50%; background: #7c3aed33; display: flex; align-items: center; justify-content: center;">
+                  <span style="font-size: 8px; color: #c4b5fd;">▶</span>
+                </div>
+                <div style="flex: 1; height: 3px; background: #7c3aed33; border-radius: 2px;">
+                  <div style="width: 40%; height: 100%; background: #c4b5fd; border-radius: 2px;"></div>
+                </div>
+                <span style="color: #6b7280; font-size: 8px;">0:12</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input -->
+        <div style="display: flex; gap: 6px; padding-top: 10px; border-top: 1px solid #ffffff0a;">
+          <div style="flex: 1; background: #1e0035; border: 1px solid #ffffff10; border-radius: 10px; padding: 8px 12px;">
+            <span style="color: #6b7280; font-size: 10px;">Ask Astra anything...</span>
+          </div>
+          <div style="width: 32px; height: 32px; border-radius: 10px; background: linear-gradient(135deg, #7c3aed, #ec4899); display: flex; align-items: center; justify-content: center;">
+            <span style="color: white; font-size: 12px;">↑</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Full-Page Chat</h3>
+      <p>Dedicated /chat page, full height. Message bubbles with Astra avatar. Audio player inline on each Astra message. Message counter in header. Classic chat app feel.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 16px; font-family: sans-serif;">
+      <div style="background: #09010f; border-radius: 12px; padding: 12px; height: 320px; display: flex; flex-direction: column;">
+        <!-- Chart context sidebar hint -->
+        <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+          <div style="flex: 2; background: #140025; border: 1px solid #7c3aed22; border-radius: 10px; padding: 10px; display: flex; flex-direction: column;">
+            <!-- Messages area -->
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px;">
+              <div style="align-self: flex-end; background: #7c3aed33; border-radius: 10px 10px 4px 10px; padding: 6px 10px; max-width: 80%;">
+                <p style="color: #f8fafc; font-size: 9px;">Tell me about my career prospects</p>
+              </div>
+              <div style="align-self: flex-start; display: flex; gap: 4px; max-width: 85%;">
+                <div style="width: 18px; height: 18px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #ec4899); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 8px;">✦</div>
+                <div style="background: #1e0035; border-radius: 4px 10px 10px 10px; padding: 6px 10px;">
+                  <p style="color: #f8fafc; font-size: 9px; line-height: 1.4;">With your Sun in Taurus in the 10th house, the stars point to steady career growth through persistence...</p>
+                </div>
+              </div>
+            </div>
+            <!-- Input -->
+            <div style="display: flex; gap: 4px;">
+              <div style="flex: 1; background: #09010f; border: 1px solid #ffffff10; border-radius: 8px; padding: 6px 10px;">
+                <span style="color: #6b7280; font-size: 9px;">Ask Astra...</span>
+              </div>
+              <div style="width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(135deg, #7c3aed, #ec4899); display: flex; align-items: center; justify-content: center;">
+                <span style="color: white; font-size: 10px;">↑</span>
+              </div>
+            </div>
+          </div>
+          <!-- Sidebar -->
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+            <div style="background: #1e0035; border: 1px solid #ffffff0a; border-radius: 8px; padding: 8px; text-align: center;">
+              <div style="color: #c4b5fd; font-size: 8px; text-transform: uppercase; letter-spacing: 1px;">Your Chart</div>
+              <div style="color: #f8fafc; font-size: 10px; margin-top: 4px;">☉ Taurus</div>
+              <div style="color: #f8fafc; font-size: 10px;">☽ Scorpio</div>
+              <div style="color: #f8fafc; font-size: 10px;">↑ Libra</div>
+            </div>
+            <div style="background: #1e0035; border: 1px solid #ffffff0a; border-radius: 8px; padding: 8px;">
+              <div style="color: #c4b5fd; font-size: 8px; text-transform: uppercase; letter-spacing: 1px;">Audio</div>
+              <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px;">
+                <div style="width: 20px; height: 20px; border-radius: 50%; background: #7c3aed; display: flex; align-items: center; justify-content: center;">
+                  <span style="font-size: 8px; color: white;">▶</span>
+                </div>
+                <div style="flex: 1; height: 2px; background: #7c3aed33; border-radius: 1px;"></div>
+              </div>
+            </div>
+            <div style="background: #1e0035; border: 1px solid #ffffff0a; border-radius: 8px; padding: 8px; text-align: center;">
+              <div style="color: #6b7280; font-size: 8px;">2/3 free messages</div>
+              <div style="color: #c4b5fd; font-size: 8px; margin-top: 2px;">Upgrade →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Chat + Sidebar</h3>
+      <p>Split layout: chat on the left, context sidebar on the right showing Big 3 chart summary, audio player, and message counter. Desktop-focused, collapses to full-page chat on mobile.</p>
+    </div>
+  </div>
+</div>

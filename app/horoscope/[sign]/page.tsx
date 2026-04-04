@@ -35,7 +35,7 @@ export default async function HoroscopePage({ params }: Props) {
 
   // Check cache first
   const { data: cached } = await supabase
-    .from('horoscopes')
+    .from('astra_horoscopes')
     .select('sign, date, reading, lucky_number, lucky_color, compatibility_sign')
     .eq('sign', sign)
     .eq('date', today)
@@ -62,7 +62,7 @@ export default async function HoroscopePage({ params }: Props) {
         compatibilitySign = result.compatibility_sign
 
         // Cache it
-        await supabase.from('horoscopes').upsert({
+        await supabase.from('astra_horoscopes').upsert({
           sign,
           date: today,
           reading: result.reading,

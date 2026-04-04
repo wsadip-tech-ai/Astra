@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   ])
 
   const { data: chart, error } = await supabase
-    .from('birth_charts')
+    .from('astra_birth_charts')
     .insert({
       user_id: user.id,
       label,

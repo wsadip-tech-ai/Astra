@@ -34,17 +34,25 @@ export default function Navbar() {
   }, [supabase])
 
   async function fetchSunSign(userId: string) {
-    const { data: chart } = await supabase
-      .from('birth_charts')
+    const { data: chart, error } = await supabase
+      .from('astra_birth_charts')
       .select('western_chart_json')
       .eq('user_id', userId)
       .limit(1)
       .maybeSingle()
 
+    if (error) {
+      console.error('[Navbar] Failed to fetch chart:', error.message)
+      return
+    }
+
     if (chart?.western_chart_json) {
       const chartData = chart.western_chart_json as { planets?: { name: string; sign: string }[] }
       const sun = chartData.planets?.find(p => p.name === 'Sun')
-      if (sun) setSunSign(sun.sign.toLowerCase())
+      if (sun) {
+        console.log('[Navbar] Sun sign:', sun.sign)
+        setSunSign(sun.sign.toLowerCase())
+      }
     }
   }
 

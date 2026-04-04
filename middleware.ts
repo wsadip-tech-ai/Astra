@@ -52,7 +52,7 @@ export async function middleware(request: NextRequest) {
   // Redirect free-tier users away from premium routes
   if (user && isPremiumRoute(pathname)) {
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('astra_profiles')
       .select('*')
       .eq('id', user.id)
       .single()

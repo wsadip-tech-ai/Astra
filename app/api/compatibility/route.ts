@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
   // Fetch user's profile and chart
   const { data: rawProfile } = await supabase
-    .from('profiles')
+    .from('astra_profiles')
     .select('*')
     .eq('id', user.id)
     .single()
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   const profile = rawProfile ? mapProfile(rawProfile as Record<string, unknown>) : null
 
   const { data: userChart } = await supabase
-    .from('birth_charts')
+    .from('astra_birth_charts')
     .select('western_chart_json')
     .eq('user_id', user.id)
     .not('western_chart_json', 'is', null)
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
 
   // Save partner chart
   const { data: partnerChart } = await supabase
-    .from('birth_charts')
+    .from('astra_birth_charts')
     .insert({
       user_id: user.id,
       label: `Partner - ${partner_name}`,

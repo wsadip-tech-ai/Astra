@@ -8,7 +8,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: 'not logged in' })
 
   const { data: charts } = await supabase
-    .from('birth_charts')
+    .from('astra_birth_charts')
     .select('id, date_of_birth, place_of_birth, western_chart_json, vedic_chart_json, created_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })

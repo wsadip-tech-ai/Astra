@@ -12,7 +12,7 @@ export async function POST() {
   }
 
   const { data: rawProfile } = await supabase
-    .from('profiles')
+    .from('astra_profiles')
     .select('*')
     .eq('id', user.id)
     .single()

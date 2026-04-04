@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   if (!user) redirect('/login?next=/dashboard')
 
   const { data: rawProfile } = await supabase
-    .from('profiles')
+    .from('astra_profiles')
     .select('*')
     .eq('id', user.id)
     .single()
@@ -22,7 +22,7 @@ export default async function DashboardPage() {
   const profile = rawProfile ? mapProfile(rawProfile as Record<string, unknown>) : null
 
   const { data: chart } = await supabase
-    .from('birth_charts')
+    .from('astra_birth_charts')
     .select('id, place_of_birth, date_of_birth, western_chart_json')
     .eq('user_id', user.id)
     .limit(1)

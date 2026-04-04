@@ -11,7 +11,7 @@ export async function GET() {
   }
 
   const { data: profile, error } = await supabase
-    .from('profiles')
+    .from('astra_profiles')
     .select('*')
     .eq('id', user.id)
     .single()

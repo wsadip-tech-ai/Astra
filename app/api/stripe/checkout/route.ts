@@ -22,7 +22,7 @@ export async function POST(request: Request) {
   }
 
   const { data: rawProfile } = await supabase
-    .from('profiles')
+    .from('astra_profiles')
     .select('*')
     .eq('id', user.id)
     .single()
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
   if (!profile?.stripe_customer_id) {
     await supabase
-      .from('profiles')
+      .from('astra_profiles')
       .update({ stripe_customer_id: customerId })
       .eq('id', user.id)
   }
