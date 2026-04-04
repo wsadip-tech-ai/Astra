@@ -88,6 +88,11 @@ export default function Navbar() {
               Transits
             </Link>
           )}
+          {isAuthed && (
+            <Link href="/vaastu" className="text-muted hover:text-star text-sm transition-colors">
+              Vaastu
+            </Link>
+          )}
           <Link href="/pricing" className="text-muted hover:text-star text-sm transition-colors">
             Pricing
           </Link>
@@ -139,6 +144,7 @@ export default function Navbar() {
             <>
               <Link href="/chat" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Chat with Astra</Link>
               <Link href="/transit" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Transits</Link>
+              <Link href="/vaastu" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Vaastu</Link>
             </>
           )}
           <Link href="/pricing" className="text-muted hover:text-star text-sm" onClick={() => setMenuOpen(false)}>Pricing</Link>

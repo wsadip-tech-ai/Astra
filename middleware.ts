@@ -3,12 +3,12 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export const isProtectedRoute = (pathname: string): boolean => {
-  const routes = ['/dashboard', '/chart', '/chat', '/compatibility', '/transit', '/yearly', '/settings']
+  const routes = ['/dashboard', '/chart', '/chat', '/compatibility', '/transit', '/yearly', '/settings', '/vaastu']
   return routes.some(r => pathname.startsWith(r))
 }
 
 export const isPremiumRoute = (pathname: string): boolean => {
-  return pathname.startsWith('/transit') || pathname.startsWith('/yearly')
+  return pathname.startsWith('/transit') || pathname.startsWith('/yearly') || pathname.startsWith('/vaastu')
 }
 
 export async function middleware(request: NextRequest) {
