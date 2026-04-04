@@ -1,3 +1,7 @@
+// NOTE: Requires the `astra_chat_messages` table in Supabase.
+// If the table doesn't exist, GET returns an empty array and chat still works.
+// Schema: id (uuid pk), user_id (uuid fk → auth.users), role (text), content (text), created_at (timestamptz default now())
+
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
@@ -9,20 +13,12 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: session } = await supabase
-    .from('user_chats')
-    .select('id, msgs')
+  const { data: messages } = await supabase
+    .from('astra_chat_messages')
+    .select('role, content, created_at')
     .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+    .order('created_at', { ascending: true })
+    .limit(50)
 
-  if (!session) {
-    return NextResponse.json({ messages: [], session_id: null })
-  }
-
-  return NextResponse.json({
-    messages: session.msgs || [],
-    session_id: session.id,
-  })
+  return NextResponse.json({ messages: messages || [] })
 }

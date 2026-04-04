@@ -9,6 +9,7 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   audioBlob?: Blob | null
+  timestamp?: string
 }
 
 interface ChatViewProps {
@@ -25,7 +26,28 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
   const [count, setCount] = useState(messagesUsed)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Session persistence disabled — chat history lives in client state only
+  // Load previous messages from Supabase on mount.
+  // Requires the `astra_chat_messages` table. Falls back to empty state if unavailable.
+  useEffect(() => {
+    async function loadHistory() {
+      try {
+        const resp = await fetch('/api/chat/session')
+        if (resp.ok) {
+          const data = await resp.json()
+          if (data.messages?.length > 0) {
+            setMessages(data.messages.map((m: { role: string; content: string; created_at: string }) => ({
+              role: m.role,
+              content: m.content,
+              timestamp: m.created_at,
+            })))
+          }
+        }
+      } catch {
+        // Failed to load history — start fresh
+      }
+    }
+    loadHistory()
+  }, [])
 
   useEffect(() => {
     // Scroll to bottom on new messages

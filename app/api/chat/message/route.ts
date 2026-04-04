@@ -143,6 +143,18 @@ export async function POST(request: Request) {
           }
         }
 
+        // Save messages to DB after streaming completes.
+        // NOTE: Requires the `astra_chat_messages` table in Supabase.
+        // If the table doesn't exist, this fails silently and chat still works.
+        try {
+          await supabase.from('astra_chat_messages').insert([
+            { user_id: user.id, role: 'user', content: message },
+            { user_id: user.id, role: 'assistant', content: fullText },
+          ])
+        } catch {
+          // DB save failed — don't break the response
+        }
+
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ done: true, full_text: fullText })}\n\n`)
         )
