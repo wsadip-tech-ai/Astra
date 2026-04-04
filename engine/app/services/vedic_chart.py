@@ -54,7 +54,7 @@ def calculate_vedic_chart(
     timezone: str,
 ) -> dict:
     """Calculate a Vedic natal chart using Lahiri ayanamsa and Whole Sign houses."""
-    jd = _to_julian_day(date_of_birth, time_of_birth, timezone)
+    jd = _to_julian_day(date_of_birth, time_of_birth, timezone, latitude, longitude)
 
     # Set Lahiri ayanamsa
     swe.set_sid_mode(swe.SIDM_LAHIRI)

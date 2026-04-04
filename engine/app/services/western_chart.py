@@ -59,7 +59,28 @@ def _angular_separation(lon1: float, lon2: float) -> float:
     return min(diff, 360 - diff)
 
 
-def _to_julian_day(date_of_birth: str, time_of_birth: str | None, timezone: str) -> float:
+def _resolve_timezone(timezone: str, latitude: float, longitude: float) -> str:
+    """Resolve timezone string, falling back to timezonefinder if invalid."""
+    try:
+        ZoneInfo(timezone)
+        return timezone
+    except (KeyError, Exception):
+        pass
+
+    # Fallback: determine timezone from coordinates
+    try:
+        from timezonefinder import TimezoneFinder
+        tf = TimezoneFinder()
+        tz = tf.timezone_at(lat=latitude, lng=longitude)
+        if tz:
+            return tz
+    except Exception:
+        pass
+
+    return "UTC"
+
+
+def _to_julian_day(date_of_birth: str, time_of_birth: str | None, timezone: str, latitude: float = 0, longitude: float = 0) -> float:
     """Parse date/time and convert to Julian Day in UT."""
     date_parts = date_of_birth.split("-")
     year = int(date_parts[0])
@@ -73,7 +94,8 @@ def _to_julian_day(date_of_birth: str, time_of_birth: str | None, timezone: str)
     else:
         hour, minute = 12, 0  # Default to noon
 
-    local_dt = datetime(year, month, day, hour, minute, tzinfo=ZoneInfo(timezone))
+    resolved_tz = _resolve_timezone(timezone, latitude, longitude)
+    local_dt = datetime(year, month, day, hour, minute, tzinfo=ZoneInfo(resolved_tz))
     utc_dt = local_dt.astimezone(ZoneInfo("UTC"))
 
     decimal_hour = utc_dt.hour + utc_dt.minute / 60.0 + utc_dt.second / 3600.0
@@ -89,7 +111,7 @@ def calculate_western_chart(
     timezone: str,
 ) -> dict:
     """Calculate a Western natal chart and return structured data."""
-    jd = _to_julian_day(date_of_birth, time_of_birth, timezone)
+    jd = _to_julian_day(date_of_birth, time_of_birth, timezone, latitude, longitude)
 
     # Calculate house cusps (Placidus)
     cusps_tuple, ascmc = swe.houses(jd, latitude, longitude, b"P")
