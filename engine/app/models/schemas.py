@@ -52,15 +52,11 @@ class WesternChartResponse(BaseModel):
     aspects: list[AspectResponse]
 
 
-class LagnaResponse(BaseModel):
-    sign: str
-    degree: int
-
-
 class VedicPlanetResponse(BaseModel):
     name: str
     sign: str
     degree: int
+    house: int
     nakshatra: str
     retrograde: bool
 
@@ -71,11 +67,70 @@ class NakshatraResponse(BaseModel):
     pada: int
 
 
+class LagnaResponse(BaseModel):
+    sign: str
+    degree: int
+    nakshatra: str | None = None
+    pada: int | None = None
+
+
+class VedicHouseResponse(BaseModel):
+    number: int
+    sign: str
+    lord: str
+    lord_house: int
+
+
+class YogaResponse(BaseModel):
+    name: str
+    present: bool
+    strength: str
+    interpretation: str
+
+
+class DashaPeriod(BaseModel):
+    planet: str
+    start: str
+    end: str
+
+
+class DashaResponse(BaseModel):
+    current_mahadasha: DashaPeriod
+    current_antardasha: DashaPeriod
+    upcoming_antardashas: list[DashaPeriod]
+
+
+class PlanetHighlight(BaseModel):
+    planet: str
+    text: str
+
+
+class InterpretationsResponse(BaseModel):
+    lagna_lord: str
+    moon_nakshatra: str
+    planet_highlights: list[PlanetHighlight]
+
+
+class RemedyResponse(BaseModel):
+    planet: str
+    reason: str
+    gemstone: str
+    mantra: str
+    charity: str
+    deity: str | None = None
+    disclaimer: str
+
+
 class VedicChartResponse(BaseModel):
     summary: str
     lagna: LagnaResponse
     planets: list[VedicPlanetResponse]
     nakshatras: list[NakshatraResponse]
+    houses: list[VedicHouseResponse]
+    yogas: list[YogaResponse]
+    dasha: DashaResponse
+    interpretations: InterpretationsResponse
+    remedies: list[RemedyResponse]
 
 
 class ErrorResponse(BaseModel):
