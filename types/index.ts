@@ -129,3 +129,35 @@ export interface CompatibilityResult {
   report: string | null
   partner_chart_id: string
 }
+
+// Vedic Ashtakoota Compatibility
+export interface KootaScore {
+  name: string
+  score: number
+  max_score: number
+  description: string
+}
+
+export interface DoshaInfo {
+  type: string
+  person: 'user' | 'partner' | 'both'
+  severity: string
+  canceled: boolean
+  remedy: string
+}
+
+export interface VedicCompatibilityResult {
+  score: number
+  max_score: number
+  rating: 'Excellent' | 'Good' | 'Average' | 'Not Recommended'
+  kootas: KootaScore[]
+  doshas: DoshaInfo[]
+  mangal_dosha_user: boolean
+  mangal_dosha_partner: boolean
+}
+
+export interface FullCompatibilityResult {
+  western: CompatibilityResult | null
+  vedic: VedicCompatibilityResult
+  partnerName: string
+}
