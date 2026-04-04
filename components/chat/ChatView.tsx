@@ -136,31 +136,6 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
         }
       }
 
-      // Request TTS audio
-      if (fullText) {
-        try {
-          const ttsResponse = await fetch('/api/chat/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: fullText }),
-          })
-
-          if (ttsResponse.ok && ttsResponse.status !== 204) {
-            const audioBuffer = await ttsResponse.arrayBuffer()
-            const audioBlob = new Blob([audioBuffer], { type: 'audio/mpeg' })
-            setMessages(prev => {
-              const updated = [...prev]
-              updated[updated.length - 1] = {
-                ...updated[updated.length - 1],
-                audioBlob,
-              }
-              return updated
-            })
-          }
-        } catch {
-          // TTS failed silently — text is still shown
-        }
-      }
     } catch {
       setMessages(prev => {
         const updated = [...prev]
