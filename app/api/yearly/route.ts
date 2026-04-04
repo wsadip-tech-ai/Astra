@@ -16,12 +16,17 @@ function buildYearlyPrompt(
   vedic: VedicChartData,
   transits: { planets: { name: string; sign: string; degree: number; nakshatra: string; retrograde: boolean }[] } | null,
 ): string {
-  const { dasha, yogas, houses, interpretations } = vedic
+  const dasha = vedic.dasha
+  const yogas = vedic.yogas ?? []
+  const houses = vedic.houses ?? []
+  const interpretations = vedic.interpretations
   const activeYogas = yogas.filter(y => y.present)
 
-  const upcomingList = (dasha.upcoming_antardashas ?? [])
-    .map(a => `${a.planet} (${a.start} to ${a.end})`)
-    .join(', ') || 'None listed'
+  const upcomingList = dasha
+    ? (dasha.upcoming_antardashas ?? [])
+        .map(a => `${a.planet} (${a.start} to ${a.end})`)
+        .join(', ') || 'None listed'
+    : 'Dasha data not available'
 
   const transitLines = transits?.planets
     .map(p => {
@@ -34,16 +39,20 @@ function buildYearlyPrompt(
     ? activeYogas.map(y => `- ${y.name} (${y.strength}): ${y.interpretation}`).join('\n')
     : 'No strong yogas active'
 
-  const houseSummary = houses
-    .map(h => `${h.number}H: ${h.sign} (lord ${h.lord} in ${h.lord_house}H)`)
-    .join(', ')
+  const houseSummary = houses.length > 0
+    ? houses.map(h => `${h.number}H: ${h.sign} (lord ${h.lord} in ${h.lord_house}H)`).join(', ')
+    : 'House data not available'
+
+  const dashaSection = dasha
+    ? `Their current Dasha:
+Mahadasha: ${dasha.current_mahadasha.planet} (${dasha.current_mahadasha.start} to ${dasha.current_mahadasha.end})
+Antardasha: ${dasha.current_antardasha.planet} (${dasha.current_antardasha.start} to ${dasha.current_antardasha.end})
+Upcoming Antardashas: ${upcomingList}`
+    : `Dasha data not available — focus on transit analysis and general chart themes.`
 
   return `You are Astra, a Vedic astrologer. Write a ~500 word year-ahead forecast for ${year} for ${name}.
 
-Their current Dasha:
-Mahadasha: ${dasha.current_mahadasha.planet} (${dasha.current_mahadasha.start} to ${dasha.current_mahadasha.end})
-Antardasha: ${dasha.current_antardasha.planet} (${dasha.current_antardasha.start} to ${dasha.current_antardasha.end})
-Upcoming Antardashas: ${upcomingList}
+${dashaSection}
 
 Active Yogas:
 ${yogaLines}
@@ -51,9 +60,9 @@ ${yogaLines}
 House Layout: ${houseSummary}
 
 Interpretations:
-- Lagna Lord: ${interpretations.lagna_lord}
+${interpretations ? `- Lagna Lord: ${interpretations.lagna_lord}
 - Moon Nakshatra: ${interpretations.moon_nakshatra}
-${interpretations.planet_highlights.map(p => `- ${p.planet}: ${p.text}`).join('\n')}
+${interpretations.planet_highlights?.map(p => `- ${p.planet}: ${p.text}`).join('\n') ?? ''}` : 'Chart interpretation data not available — use transit positions to guide the reading.'}
 
 Current Transits:
 ${transitLines}
