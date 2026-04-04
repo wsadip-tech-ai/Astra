@@ -1,0 +1,1 @@
+"""Astro-Vaastu calculation services."""
