@@ -61,6 +61,7 @@ def interpret_transit(
     transit_house: int,
     is_retrograde: bool,
     dasha_lord: str | None = None,
+    degree: float = 15.0,
 ) -> dict:
     """Interpret a single planet's transit through a house.
 
@@ -92,6 +93,9 @@ def interpret_transit(
     if dasha_lord and dasha_lord == planet_name:
         dasha_connection = f"{planet_name} is your current Dasha lord, amplifying this transit's effects significantly. Pay special attention to {life_areas[0].lower()} themes."
 
+    # Transit timing window
+    transit_window = _estimate_transit_window(planet_name, degree)
+
     return {
         "planet": planet_name,
         "sign": transit_sign,
@@ -103,6 +107,7 @@ def interpret_transit(
         "detailed": house_meaning,
         "retrograde_note": retrograde_note,
         "dasha_connection": dasha_connection,
+        "transit_window": transit_window,
     }
 
 
@@ -134,6 +139,7 @@ def interpret_all_transits(
             transit_house=house,
             is_retrograde=tp.get("retrograde", False),
             dasha_lord=dasha_lord,
+            degree=float(tp.get("degree", 15)),
         )
         planet_interpretations.append(interp)
 
@@ -187,6 +193,58 @@ def interpret_all_transits(
         "favorable_count": len(favorable),
         "challenging_count": len(challenging),
         "overall_outlook": overall,
+    }
+
+
+# Approximate transit duration per sign (in days) for each planet
+# Used to estimate how long a transit effect lasts
+TRANSIT_DURATION_DAYS: dict[str, int] = {
+    "Sun": 30,          # ~1 month per sign
+    "Moon": 2,           # ~2.5 days per sign
+    "Mars": 45,          # ~1.5 months per sign (varies: 28-180 if retrograde)
+    "Mercury": 25,       # ~25 days per sign (varies with retrograde)
+    "Jupiter": 365,      # ~1 year per sign
+    "Venus": 28,         # ~1 month per sign (varies with retrograde)
+    "Saturn": 912,       # ~2.5 years per sign
+    "Rahu": 547,         # ~18 months per sign
+    "Ketu": 547,         # ~18 months per sign
+}
+
+
+def _estimate_transit_window(planet: str, current_degree: float) -> dict:
+    """Estimate how long this transit has been active and how long it will last.
+
+    Uses the planet's approximate speed through a sign to estimate
+    start/end dates relative to today.
+    """
+    from datetime import date, timedelta
+
+    total_days = TRANSIT_DURATION_DAYS.get(planet, 30)
+    # Approximate progress through the sign (degree 0-29 maps to 0-100%)
+    progress = min(current_degree / 30.0, 1.0)
+    days_elapsed = int(progress * total_days)
+    days_remaining = total_days - days_elapsed
+
+    today = date.today()
+    approx_start = (today - timedelta(days=days_elapsed)).isoformat()
+    approx_end = (today + timedelta(days=days_remaining)).isoformat()
+
+    # Human-readable duration
+    if total_days >= 365:
+        duration_text = f"~{total_days // 365} year{'s' if total_days >= 730 else ''}"
+    elif total_days >= 30:
+        months = total_days // 30
+        duration_text = f"~{months} month{'s' if months > 1 else ''}"
+    else:
+        duration_text = f"~{total_days} days"
+
+    return {
+        "approx_start": approx_start,
+        "approx_end": approx_end,
+        "days_remaining": days_remaining,
+        "total_duration_days": total_days,
+        "duration_text": duration_text,
+        "progress_pct": round(progress * 100),
     }
 
 
@@ -278,11 +336,14 @@ def get_high_impact_summary(
             alert_type = "attention"
             action = f"Remedy: {remedy.get('practice', 'Practice patience and awareness')}"
 
+        # Include timing from transit window
+        window = item.get("transit_window", {})
+
         top_alerts.append({
             "planet": planet,
             "house": item["house"],
             "sign": item["sign"],
-            "type": alert_type,  # "opportunity" or "attention"
+            "type": alert_type,
             "impact_score": item["impact_score"],
             "life_areas": item["life_areas"][:2],
             "headline": _build_headline(planet, item["house"], item["is_favorable"], item["life_areas"]),
@@ -294,6 +355,13 @@ def get_high_impact_summary(
                 "practice": remedy.get("practice", ""),
             },
             "is_favorable": item["is_favorable"],
+            "timing": {
+                "active_from": window.get("approx_start", ""),
+                "active_until": window.get("approx_end", ""),
+                "days_remaining": window.get("days_remaining", 0),
+                "duration": window.get("duration_text", ""),
+                "progress_pct": window.get("progress_pct", 50),
+            },
         })
 
     # Life area one-line verdicts

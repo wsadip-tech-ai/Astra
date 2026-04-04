@@ -53,6 +53,14 @@ interface AlertRemedy {
   practice?: string
 }
 
+interface AlertTiming {
+  active_from: string
+  active_until: string
+  days_remaining: number
+  duration: string
+  progress_pct: number
+}
+
 interface HighImpactAlert {
   planet: string
   house: number
@@ -64,6 +72,7 @@ interface HighImpactAlert {
   detail: string
   remedy: AlertRemedy
   is_favorable: boolean
+  timing?: AlertTiming
 }
 
 interface LifeScore {
@@ -237,6 +246,22 @@ function AlertCard({ alert, index }: { alert: HighImpactAlert; index: number }) 
             {alert.type === 'opportunity' ? 'Opportunity' : 'Needs Attention'}
           </span>
         </div>
+
+        {/* Timing bar */}
+        {alert.timing && alert.timing.active_from && (
+          <div className="mb-3">
+            <div className="flex items-center justify-between text-[11px] text-muted mb-1.5">
+              <span>Active: {new Date(alert.timing.active_from).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} — {new Date(alert.timing.active_until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              <span className="text-star font-medium">{alert.timing.days_remaining}d left ({alert.timing.duration})</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${isFavorable ? 'bg-emerald-500/60' : 'bg-rose/60'}`}
+                style={{ width: `${alert.timing.progress_pct}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* One-line detail */}
         <p className="text-muted text-sm leading-relaxed mb-3">
