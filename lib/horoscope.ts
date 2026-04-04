@@ -64,6 +64,26 @@ export function parseHoroscopeResponse(raw: string): HoroscopeFields | null {
   }
 }
 
+function deriveLuckyValues(transits: TransitData | undefined, signElement: string): { lucky_number: number; lucky_color: string } {
+  if (!transits) {
+    // Fallback: use date-based hash
+    const dateNum = new Date().getDate()
+    return { lucky_number: (dateNum * 7 + 13) % 99 + 1, lucky_color: 'Gold' }
+  }
+
+  // Lucky number: sum of all transit degrees, mod 99, + 1
+  const degreeSum = transits.planets.reduce((sum, p) => sum + p.degree, 0)
+  const lucky_number = (degreeSum % 99) + 1
+
+  // Lucky color: based on dominant element from sign
+  const elementColors: Record<string, string> = {
+    Fire: 'Red', Earth: 'Green', Air: 'Yellow', Water: 'Blue',
+  }
+  const lucky_color = elementColors[signElement] || 'Gold'
+
+  return { lucky_number, lucky_color }
+}
+
 export async function generateHoroscope(sign: ZodiacSign, transits?: TransitData): Promise<HoroscopeFields | null> {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   const model = process.env.HOROSCOPE_MODEL || 'gpt-4o-mini'
@@ -77,5 +97,10 @@ export async function generateHoroscope(sign: ZodiacSign, transits?: TransitData
   const text = response.choices[0]?.message?.content
   if (!text) return null
 
-  return parseHoroscopeResponse(text)
+  const parsed = parseHoroscopeResponse(text)
+  if (!parsed) return null
+
+  // Override with deterministic values
+  const { lucky_number, lucky_color } = deriveLuckyValues(transits, sign.element)
+  return { ...parsed, lucky_number, lucky_color }
 }
