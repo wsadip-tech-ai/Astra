@@ -312,11 +312,6 @@ def get_planet_in_house(planet: str, house: int) -> str:
 # Nakshatra meanings  (27 nakshatras)
 # ---------------------------------------------------------------------------
 
-# Nakshatra lords cycle: Ketu, Venus, Sun, Moon, Mars, Rahu, Jupiter, Saturn, Mercury (×3)
-_NAK_LORD_CYCLE = [
-    "Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"
-]
-
 _NAKSHATRA_DATA: dict[str, dict[str, str]] = {
     "Ashwini": {
         "ruling_planet": "Ketu",
@@ -541,10 +536,10 @@ def get_planet_remedy(planet: str) -> dict[str, str]:
     entry = _PLANET_REMEDY.get(planet)
     if entry is None:
         return {
-            "gemstone": "Unknown",
+            "gemstone": f"Remedy data not available for {planet}.",
             "mantra": "Unknown",
             "charity": "Unknown",
-            "deity": f"Remedy data not available for {planet}.",
+            "deity": "Unknown",
         }
     return dict(entry)
 
