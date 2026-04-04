@@ -4,6 +4,7 @@ import Navbar from '@/components/layout/Navbar'
 import GlowButton from '@/components/ui/GlowButton'
 import CosmicProfile from '@/components/dashboard/CosmicProfile'
 import Link from 'next/link'
+import { mapProfile } from '@/lib/profile'
 import type { WesternChartData } from '@/types'
 
 export default async function DashboardPage() {
@@ -12,11 +13,13 @@ export default async function DashboardPage() {
 
   if (!user) redirect('/login?next=/dashboard')
 
-  const { data: profile } = await supabase
+  const { data: rawProfile } = await supabase
     .from('profiles')
-    .select('name, subscription_tier')
+    .select('*')
     .eq('id', user.id)
     .single()
+
+  const profile = rawProfile ? mapProfile(rawProfile as Record<string, unknown>) : null
 
   const { data: chart } = await supabase
     .from('birth_charts')

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createAI, getModel, buildSystemPrompt } from '@/lib/claude'
+import { createClient as createAI, getModel } from '@/lib/claude'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -7,47 +7,36 @@ export async function GET() {
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  results.user = user ? user.email : 'NOT LOGGED IN'
+  results.user = user?.email ?? 'NOT LOGGED IN'
   if (!user) return NextResponse.json(results)
 
-  // Test session insert (no chart_id)
-  try {
-    const { data: session, error } = await supabase
-      .from('astra_chats')
-      .insert({ user_id: user.id, messages: [] })
-      .select('id')
-      .single()
-    results.session_created = !!session
-    results.session_error = error?.message ?? null
-  } catch (e: unknown) {
-    results.session_error = e instanceof Error ? e.message : String(e)
-  }
+  // Test session insert with new table
+  const { data: session, error: sessErr } = await supabase
+    .from('user_chats')
+    .insert({ user_id: user.id, msgs: [] })
+    .select('id')
+    .single()
+  results.session_insert = session ? 'OK - id: ' + session.id : sessErr?.message
 
-  // Test full streaming chat flow
+  // Test streaming
   try {
     const openai = createAI()
-    const model = getModel()
-    results.model = model
-
     const stream = await openai.chat.completions.create({
-      model,
-      max_tokens: 50,
+      model: getModel(),
+      max_tokens: 30,
       stream: true,
       messages: [
         { role: 'system', content: 'You are Astra. Reply in one sentence.' },
         { role: 'user', content: 'Hello' },
       ],
     })
-
     let text = ''
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta?.content
       if (delta) text += delta
     }
-    results.stream_response = text
-    results.stream_ok = true
+    results.stream = text
   } catch (e: unknown) {
-    results.stream_ok = false
     results.stream_error = e instanceof Error ? e.message : String(e)
   }
 

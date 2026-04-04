@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { buildSystemPrompt, buildConversationHistory, createClient as createAI, getModel } from '@/lib/claude'
+import { mapProfile } from '@/lib/profile'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -17,28 +18,20 @@ export async function POST(request: Request) {
   }
 
   // Fetch profile
-  const { data: profile } = await supabase
+  const { data: rawProfile } = await supabase
     .from('profiles')
-    .select('name, subscription_tier, daily_message_count, daily_reset_at')
+    .select('*')
     .eq('id', user.id)
     .single()
 
-  if (!profile) {
+  if (!rawProfile) {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 })
   }
 
-  // Reset daily count if new day
-  const today = new Date().toISOString().split('T')[0]
-  let messageCount = profile.daily_message_count
-  if (profile.daily_reset_at < today) {
-    messageCount = 0
-    await supabase
-      .from('profiles')
-      .update({ daily_message_count: 0, daily_reset_at: today })
-      .eq('id', user.id)
-  }
+  const profile = mapProfile(rawProfile as Record<string, unknown>)
 
-  // Check free tier limit
+  // Free tier limit check (skip if columns don't exist in DB)
+  const messageCount = profile.daily_message_count
   if (profile.subscription_tier !== 'premium' && messageCount >= 3) {
     return NextResponse.json({ error: 'daily_limit_reached' }, { status: 429 })
   }
@@ -107,11 +100,15 @@ export async function POST(request: Request) {
           encoder.encode(`data: ${JSON.stringify({ done: true, full_text: fullText })}\n\n`)
         )
 
-        // Increment daily message count
-        await supabase
-          .from('profiles')
-          .update({ daily_message_count: messageCount + 1 })
-          .eq('id', user.id)
+        // Try to increment daily message count (may fail if column doesn't exist)
+        try {
+          await supabase
+            .from('profiles')
+            .update({ daily_message_count: messageCount + 1 })
+            .eq('id', user.id)
+        } catch {
+          // Column may not exist — skip silently
+        }
 
       } catch (err) {
         console.error('[chat/message] Stream error:', err)
