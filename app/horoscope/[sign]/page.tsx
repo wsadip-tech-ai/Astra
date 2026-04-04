@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { ZODIAC_SIGNS, ZODIAC_SLUGS, getSignBySlug } from '@/constants/zodiac'
 import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 import { generateHoroscope } from '@/lib/horoscope'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
@@ -8,6 +9,14 @@ import GlowButton from '@/components/ui/GlowButton'
 import type { Metadata } from 'next'
 
 export const revalidate = 86400
+
+function createServiceClient() {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { cookies: { getAll: () => [], setAll: () => {} } },
+  )
+}
 
 interface Props { params: Promise<{ sign: string }> }
 
@@ -61,8 +70,9 @@ export default async function HoroscopePage({ params }: Props) {
         luckyColor = result.lucky_color
         compatibilitySign = result.compatibility_sign
 
-        // Cache it
-        await supabase.from('astra_horoscopes').upsert({
+        // Cache it using service role (bypasses RLS)
+        const serviceClient = createServiceClient()
+        await serviceClient.from('astra_horoscopes').upsert({
           sign,
           date: today,
           reading: result.reading,

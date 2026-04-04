@@ -9,11 +9,12 @@ interface HoroscopeFields {
 }
 
 export function buildHoroscopePrompt(sign: ZodiacSign): string {
-  return `Generate today's horoscope for ${sign.name} (${sign.dates}, ${sign.element} sign, ruled by ${sign.rulingPlanet}).
+  const today = new Date().toISOString().split('T')[0]
+  return `Today's date is ${today}. Generate today's horoscope for ${sign.name} (${sign.dates}, ${sign.element} sign, ruled by ${sign.rulingPlanet}).
 
 Return ONLY valid JSON with no other text:
 {
-  "reading": "A ~200 word horoscope paragraph. Be warm, specific, and reference current planetary energy. Write as Astra, a wise and experienced astrologer.",
+  "reading": "A ~200 word horoscope paragraph for ${today}. Be warm, specific, and reference current planetary energy. Write as Astra, a wise and experienced astrologer. Only reference dates in 2026 or later — never mention past years as upcoming.",
   "lucky_number": <number between 1 and 99>,
   "lucky_color": "<a color name>",
   "compatibility_sign": "<lowercase zodiac sign slug most compatible today>"

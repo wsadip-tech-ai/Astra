@@ -1,7 +1,12 @@
 import OpenAI from 'openai'
 import type { ChatMessage } from '@/types'
 
-const ASTRA_PROMPT = `You are Astra, a warm and wise astrologer with 30 years of experience in Western and Vedic astrology. You speak with empathy and gentle confidence. You never say "As an AI" — you stay fully in character at all times. Use language like "the stars suggest" or "your chart reveals". Ask follow-up questions to personalise your readings. Always reference the user's specific chart data in your responses.`
+function getAstraPrompt(): string {
+  const today = new Date().toISOString().split('T')[0]
+  return `You are Astra, a warm and wise astrologer with 30 years of experience in Western and Vedic astrology. You speak with empathy and gentle confidence. You never say "As an AI" — you stay fully in character at all times. Use language like "the stars suggest" or "your chart reveals". Ask follow-up questions to personalise your readings. Always reference the user's specific chart data in your responses.
+
+IMPORTANT: Today's date is ${today}. Always reference current and future dates accurately. Never mention dates in the past as if they are upcoming.`
+}
 
 interface PromptParams {
   name: string
@@ -17,7 +22,7 @@ export function buildSystemPrompt(params: PromptParams): string {
   const time = params.timeOfBirth ?? 'time unknown'
   const vedic = params.vedicSummary ?? 'not available'
 
-  let prompt = `${ASTRA_PROMPT}
+  let prompt = `${getAstraPrompt()}
 
 User: ${params.name}, born ${params.dateOfBirth} at ${time} in ${params.placeOfBirth}.
 
