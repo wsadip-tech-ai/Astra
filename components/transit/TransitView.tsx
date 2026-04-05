@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import TransitKundaliChart from './TransitKundaliChart'
 
 /* ─── Type Definitions ─── */
 
@@ -125,6 +126,7 @@ export interface TransitViewProps {
     current_antardasha: { planet: string; start: string; end: string }
   } | null
   upcomingAntardashas?: UpcomingAntardasha[]
+  natalHouses?: { number: number; sign: string; lord: string }[]
 }
 
 /* ─── Constants ─── */
@@ -447,7 +449,7 @@ function TimelineDot({ nature }: { nature: string }) {
 
 /* ─── Main Component ─── */
 
-export default function TransitView({ transits, personal, interpreted, dasha, upcomingAntardashas }: TransitViewProps) {
+export default function TransitView({ transits, personal, interpreted, dasha, upcomingAntardashas, natalHouses }: TransitViewProps) {
   const [detailOpen, setDetailOpen] = useState(false)
 
   const dateFormatted = new Date(transits.date + 'T00:00:00').toLocaleDateString('en-US', {
@@ -530,6 +532,23 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
             {new Date(dasha.current_antardasha.end).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
           </div>
         </motion.div>
+      )}
+
+      {/* ═══ 3b. Transit Kundali Chart ═══ */}
+      {transits && personal?.transit_houses && (
+        <motion.section variants={fadeUp}>
+          <TransitKundaliChart
+            transitPlanets={transits.planets}
+            transitHouses={personal.transit_houses}
+            natalHouses={natalHouses}
+            selectedHouse={null}
+            interpretedPlanets={interpreted?.planet_interpretations?.map(p => ({
+              planet: p.planet,
+              is_favorable: p.is_favorable,
+              tone: p.tone,
+            }))}
+          />
+        </motion.section>
       )}
 
       {/* ═══ 4. Life Area Scores (compact 4-column) ═══ */}

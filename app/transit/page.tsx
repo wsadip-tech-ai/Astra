@@ -33,6 +33,7 @@ export default async function TransitPage() {
   let interpreted: TransitViewProps['interpreted'] = null
   let dasha: TransitViewProps['dasha'] = undefined
   let upcomingAntardashas: { planet: string; start: string; end: string }[] = []
+  let natalHouses: { number: number; sign: string; lord: string }[] | undefined
   if (transits) {
     try {
       const { data: chart } = await supabase
@@ -44,6 +45,7 @@ export default async function TransitPage() {
 
       const vedicData = chart?.vedic_chart_json as {
         planets?: { name: string; sign: string; degree: number; house?: number }[]
+        houses?: { number: number; sign: string; lord: string; lord_house: number }[]
         lagna?: { sign: string }
         dasha?: {
           current_mahadasha: { planet: string; start: string; end: string }
@@ -98,6 +100,7 @@ export default async function TransitPage() {
 
         dasha = vedicData.dasha ?? undefined
         upcomingAntardashas = vedicData.dasha?.upcoming_antardashas ?? []
+        natalHouses = vedicData.houses?.map(h => ({ number: h.number, sign: h.sign, lord: h.lord }))
       }
     } catch (err) {
       console.error('[transit/page] Failed to fetch personal transits:', err)
@@ -110,7 +113,7 @@ export default async function TransitPage() {
       <main className="min-h-screen bg-void pt-24 px-6">
         <div className="max-w-4xl mx-auto py-12">
           {transits ? (
-            <TransitView transits={transits} personal={personal} interpreted={interpreted} dasha={dasha} upcomingAntardashas={upcomingAntardashas} />
+            <TransitView transits={transits} personal={personal} interpreted={interpreted} dasha={dasha} upcomingAntardashas={upcomingAntardashas} natalHouses={natalHouses} />
           ) : (
             <div className="text-center py-24">
               <div className="text-5xl mb-4">🔭</div>
