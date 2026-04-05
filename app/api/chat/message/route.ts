@@ -98,6 +98,67 @@ export async function POST(request: Request) {
     // Transit fetch failed — continue without transits
   }
 
+  // Fetch personal transit interpretations (life area analysis, timing)
+  let personalTransitContext = ''
+  if (transits && vedicChart) {
+    try {
+      const planets = (chart.vedic_chart_json as { planets?: { name: string; sign: string; degree: number; house?: number }[] })?.planets ?? []
+      const moonPlanet = planets.find(p => p.name === 'Moon')
+      if (moonPlanet) {
+        const interpRes = await fetch(`${FASTAPI_BASE_URL}/transits/interpret`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': INTERNAL_SECRET },
+          body: JSON.stringify({
+            natal_planets: planets.map(p => ({ name: p.name, sign: p.sign, degree: p.degree, house: p.house ?? 1 })),
+            moon_sign: moonPlanet.sign,
+          }),
+          signal: AbortSignal.timeout(5000),
+        })
+        if (interpRes.ok) {
+          const interp = await interpRes.json()
+          const hi = interp.high_impact
+          if (hi?.alerts?.length > 0) {
+            personalTransitContext = `\n\n## Personal Transit Analysis (TODAY)\n`
+            personalTransitContext += `Overall: ${interp.overall_outlook}\n`
+            personalTransitContext += `\n### Top Alerts (most impactful on the user RIGHT NOW):\n`
+            for (const alert of hi.alerts) {
+              const timing = alert.timing
+              personalTransitContext += `- ${alert.headline} [${alert.type.toUpperCase()}]\n`
+              personalTransitContext += `  Life areas: ${alert.life_areas.join(', ')}\n`
+              personalTransitContext += `  ${alert.detail}\n`
+              if (timing?.active_from) {
+                personalTransitContext += `  Active: ${timing.active_from} to ${timing.active_until} (${timing.days_remaining} days remaining, ${timing.duration})\n`
+              }
+              personalTransitContext += `  Remedy: ${alert.remedy?.practice || 'Practice awareness'}\n`
+            }
+            if (hi.life_scores) {
+              personalTransitContext += `\n### Life Area Outlook:\n`
+              for (const [area, score] of Object.entries(hi.life_scores)) {
+                const s = score as { outlook: string; verdict: string }
+                personalTransitContext += `- ${area}: ${s.outlook.toUpperCase()} — ${s.verdict}\n`
+              }
+            }
+            if (hi.timeline?.length > 0) {
+              personalTransitContext += `\n### Upcoming Dasha Shifts:\n`
+              for (const t of hi.timeline) {
+                personalTransitContext += `- ${t.planet} Antardasha: ${t.start} to ${t.end} (${t.nature}) — ${t.description}\n`
+              }
+            }
+          }
+          // Also include transit house positions
+          if (interp.transit_houses) {
+            personalTransitContext += `\n### Transit Houses from Moon:\n`
+            for (const [planet, house] of Object.entries(interp.transit_houses)) {
+              personalTransitContext += `- ${planet}: ${house}th house from Moon\n`
+            }
+          }
+        }
+      }
+    } catch {
+      // Interpretation fetch failed — continue with basic transits
+    }
+  }
+
   // Fetch Vaastu property if saved
   let vaastuProfile = null
   try {
@@ -122,7 +183,7 @@ export async function POST(request: Request) {
     // Table may not exist — skip silently
   }
 
-  const systemPrompt = buildSystemPrompt({
+  let systemPrompt = buildSystemPrompt({
     name: profile.name || 'Seeker',
     dateOfBirth: chart.date_of_birth,
     timeOfBirth: chart.time_of_birth,
@@ -132,6 +193,11 @@ export async function POST(request: Request) {
     transits,
     vaastuProfile,
   })
+
+  // Append personal transit interpretations (life areas, alerts, timing, house positions)
+  if (personalTransitContext) {
+    systemPrompt += personalTransitContext
+  }
 
   // Use history from client (no DB session for now)
   const conversationHistory = (history as { role: string; content: string }[])
