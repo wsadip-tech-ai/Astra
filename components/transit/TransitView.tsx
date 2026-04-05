@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import TransitKundaliChart from './TransitKundaliChart'
 
@@ -131,6 +131,18 @@ export interface TransitViewProps {
 
 /* ─── Constants ─── */
 
+const PLANET_GLYPHS: Record<string, string> = {
+  Sun: '\u2609',
+  Moon: '\u263D',
+  Mars: '\u2642',
+  Mercury: '\u263F',
+  Jupiter: '\u2643',
+  Venus: '\u2640',
+  Saturn: '\u2644',
+  Rahu: '\u260A',
+  Ketu: '\u260B',
+}
+
 const MURTHI_STYLES: Record<string, { bg: string; label: string }> = {
   Gold: { bg: 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/25', label: 'Gold Murthi' },
   Silver: { bg: 'bg-gray-400/15 text-gray-300 border border-gray-400/25', label: 'Silver Murthi' },
@@ -148,22 +160,22 @@ const ASPECT_LABELS: Record<string, { label: string; color: string }> = {
 
 const LIFE_AREA_ICONS: Record<string, React.ReactNode> = {
   'Finance & Career': (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.306a11.95 11.95 0 015.814-5.518l2.74-1.22m0 0l-5.94-2.281m5.94 2.28l-2.28 5.941" />
     </svg>
   ),
   'Relationships & Family': (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
     </svg>
   ),
   'Health & Wellbeing': (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
     </svg>
   ),
   'Spirituality & Growth': (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
     </svg>
   ),
@@ -195,6 +207,14 @@ const slideIn = {
 
 /* ─── Sub-components ─── */
 
+function SectionDivider() {
+  return (
+    <div className="relative h-px w-full">
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-violet/20 to-transparent" />
+    </div>
+  )
+}
+
 function ChevronIcon({ open }: { open: boolean }) {
   return (
     <svg
@@ -209,26 +229,30 @@ function ChevronIcon({ open }: { open: boolean }) {
   )
 }
 
-/* ─── Alert Card ─── */
+/* ─── Alert Card (full — top 3) ─── */
 
 function AlertCard({ alert, index }: { alert: HighImpactAlert; index: number }) {
   const [remedyOpen, setRemedyOpen] = useState(false)
   const isFavorable = alert.is_favorable
   const stripColor = isFavorable ? 'bg-emerald-500' : 'bg-rose'
-  const glowColor = isFavorable ? 'bg-emerald-500/5' : 'bg-rose/5'
+  const glyph = PLANET_GLYPHS[alert.planet] ?? ''
+  const gradientBg = isFavorable
+    ? 'bg-gradient-to-r from-emerald-500/8 to-transparent'
+    : 'bg-gradient-to-r from-rose/8 to-transparent'
 
   return (
     <motion.div
       variants={slideIn}
       custom={index}
-      className={`relative rounded-xl overflow-hidden border border-white/5 ${glowColor}`}
+      className={`relative rounded-xl overflow-hidden border border-white/5 ${gradientBg}`}
     >
       {/* Left color strip */}
       <div className={`absolute left-0 top-0 bottom-0 w-1 ${stripColor}`} />
 
       <div className="pl-5 pr-5 py-5">
-        {/* Headline */}
+        {/* Planet glyph + Headline */}
         <h3 className="font-display text-lg text-star leading-snug mb-2">
+          <span className="text-violet-light mr-2 text-xl">{glyph}</span>
           {alert.headline}
         </h3>
 
@@ -249,14 +273,14 @@ function AlertCard({ alert, index }: { alert: HighImpactAlert; index: number }) 
           </span>
         </div>
 
-        {/* Timing bar */}
+        {/* Timing bar — more prominent */}
         {alert.timing && alert.timing.active_from && (
           <div className="mb-3">
             <div className="flex items-center justify-between text-[11px] text-muted mb-1.5">
               <span>Active: {new Date(alert.timing.active_from).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} — {new Date(alert.timing.active_until).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
               <span className="text-star font-medium">{alert.timing.days_remaining}d left ({alert.timing.duration})</span>
             </div>
-            <div className="h-1.5 rounded-full bg-white/5 overflow-hidden">
+            <div className="h-2 rounded-full bg-white/5 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all ${isFavorable ? 'bg-emerald-500/60' : 'bg-rose/60'}`}
                 style={{ width: `${alert.timing.progress_pct}%` }}
@@ -339,17 +363,97 @@ function AlertCard({ alert, index }: { alert: HighImpactAlert; index: number }) 
   )
 }
 
+/* ─── Mini Alert Card (remaining planets) ─── */
+
+function MiniAlertCard({ interp }: { interp: PlanetInterpretation }) {
+  const [expanded, setExpanded] = useState(false)
+  const glyph = PLANET_GLYPHS[interp.planet] ?? ''
+  const isFavorable = interp.is_favorable
+
+  return (
+    <motion.div
+      variants={fadeUp}
+      className="bg-nebula/50 rounded-lg border border-white/5 hover:border-violet/15 transition-colors"
+    >
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full text-left px-4 py-3 flex items-center gap-3 cursor-pointer"
+      >
+        <span className="text-violet-light text-lg shrink-0">{glyph}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="text-star text-sm font-medium">{interp.planet}</span>
+            <span className="text-muted text-xs">{interp.sign} &middot; House {interp.house}</span>
+          </div>
+          <p className="text-muted text-xs leading-relaxed truncate">{interp.summary}</p>
+        </div>
+        <span className={`text-[10px] uppercase tracking-wide font-medium rounded-full px-2.5 py-0.5 shrink-0 ${
+          isFavorable ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose/15 text-rose'
+        }`}>
+          {isFavorable ? 'Favorable' : 'Challenging'}
+        </span>
+        <ChevronIcon open={expanded} />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 pt-1 border-t border-white/5 space-y-3">
+              <p className="text-muted text-sm leading-relaxed">{interp.detailed}</p>
+
+              {interp.life_areas.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {interp.life_areas.map(area => (
+                    <span key={area} className="text-[10px] uppercase tracking-wide text-violet-light bg-violet/10 rounded-full px-2.5 py-0.5">
+                      {area}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {interp.retrograde_note && (
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3.5 py-2.5">
+                  <p className="text-amber-400 text-xs font-medium mb-0.5">Retrograde Effect</p>
+                  <p className="text-amber-300/80 text-xs leading-relaxed">{interp.retrograde_note}</p>
+                </div>
+              )}
+
+              {interp.dasha_connection && (
+                <div className="bg-violet/10 border border-violet/20 rounded-lg px-3.5 py-2.5">
+                  <p className="text-violet-light text-xs font-medium mb-0.5">Dasha Connection</p>
+                  <p className="text-violet-light/70 text-xs leading-relaxed">{interp.dasha_connection}</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  )
+}
+
 /* ─── Life Score Card ─── */
 
 function LifeScoreCard({ area, score }: { area: string; score: LifeScore | undefined }) {
   const icon = LIFE_AREA_ICONS[area]
   const outlook = score?.outlook?.toLowerCase() ?? 'mixed'
   const dotColor = outlook === 'favorable' ? 'bg-emerald-400' : outlook === 'challenging' ? 'bg-rose' : 'bg-yellow-400'
+  const borderHover = outlook === 'favorable'
+    ? 'hover:border-emerald-500/20'
+    : outlook === 'challenging'
+      ? 'hover:border-rose/20'
+      : 'hover:border-yellow-400/20'
 
   return (
-    <div className="bg-nebula rounded-xl p-4 border border-white/5 hover:border-violet/15 transition-colors">
+    <div className={`bg-nebula rounded-xl p-4 border border-white/5 ${borderHover} transition-colors`}>
       <div className="flex items-center gap-2.5 mb-2">
-        <div className="text-violet-light/70">{icon}</div>
+        <div className="text-violet-light/80">{icon}</div>
         <h3 className="text-star text-xs font-semibold truncate">{area}</h3>
         <span className={`w-2 h-2 rounded-full shrink-0 ml-auto ${dotColor}`} />
       </div>
@@ -365,6 +469,7 @@ function LifeScoreCard({ area, score }: { area: string; score: LifeScore | undef
 function PlanetCard({ interp, defaultOpen = false }: { interp: PlanetInterpretation; defaultOpen?: boolean }) {
   const [expanded, setExpanded] = useState(defaultOpen)
   const borderColor = interp.is_favorable ? 'border-l-green-500/30' : 'border-l-rose/30'
+  const glyph = PLANET_GLYPHS[interp.planet] ?? ''
 
   return (
     <motion.div
@@ -373,7 +478,10 @@ function PlanetCard({ interp, defaultOpen = false }: { interp: PlanetInterpretat
     >
       <div className="flex items-start justify-between mb-2">
         <div>
-          <h4 className="text-star font-semibold text-sm">{interp.planet}</h4>
+          <h4 className="text-star font-semibold text-sm">
+            <span className="text-violet-light mr-1.5">{glyph}</span>
+            {interp.planet}
+          </h4>
           <p className="text-violet-light text-xs">
             {interp.sign} &middot; House {interp.house}
           </p>
@@ -451,6 +559,7 @@ function TimelineDot({ nature }: { nature: string }) {
 
 export default function TransitView({ transits, personal, interpreted, dasha, upcomingAntardashas, natalHouses }: TransitViewProps) {
   const [detailOpen, setDetailOpen] = useState(false)
+  const [showAllAlerts, setShowAllAlerts] = useState(false)
 
   const dateFormatted = new Date(transits.date + 'T00:00:00').toLocaleDateString('en-US', {
     weekday: 'long',
@@ -464,7 +573,31 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
     : null
 
   const highImpact = interpreted?.high_impact ?? null
-  const hasAlerts = highImpact && highImpact.alerts && highImpact.alerts.length > 0
+
+  // Sort top alerts: first by days_remaining ascending, then impact_score descending
+  const sortedAlerts = useMemo(() => {
+    if (!highImpact?.alerts?.length) return []
+    return [...highImpact.alerts].sort((a, b) => {
+      const aDays = a.timing?.days_remaining ?? Infinity
+      const bDays = b.timing?.days_remaining ?? Infinity
+      if (aDays !== bDays) return aDays - bDays
+      return b.impact_score - a.impact_score
+    })
+  }, [highImpact?.alerts])
+
+  const topAlerts = sortedAlerts.slice(0, 3)
+  const hasAlerts = topAlerts.length > 0
+
+  // Remaining planet interpretations not in top 3 alerts
+  const topAlertPlanets = useMemo(
+    () => new Set(topAlerts.map(a => a.planet)),
+    [topAlerts]
+  )
+
+  const remainingPlanets = useMemo(() => {
+    if (!interpreted?.planet_interpretations) return []
+    return interpreted.planet_interpretations.filter(p => !topAlertPlanets.has(p.planet))
+  }, [interpreted?.planet_interpretations, topAlertPlanets])
 
   // Build timeline: prefer high_impact.timeline, fallback to upcomingAntardashas
   const timeline: TimelineEntry[] = highImpact?.timeline && highImpact.timeline.length > 0
@@ -484,7 +617,7 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
       animate="show"
       className="space-y-8"
     >
-      {/* ═══ 1. Compact Header ═══ */}
+      {/* ═══ 1. Compact Header + Murthi Badge ═══ */}
       <motion.div variants={fadeUp} className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display text-3xl text-star mb-1">
@@ -501,14 +634,27 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
         </div>
       </motion.div>
 
-      {/* ═══ 2. Alert Cards (TOP PRIORITY) ═══ */}
-      {hasAlerts && (
-        <motion.section variants={stagger} initial="hidden" animate="show" className="space-y-3">
-          {highImpact.alerts.map((alert, i) => (
-            <AlertCard key={`${alert.planet}-${alert.house}`} alert={alert} index={i} />
-          ))}
+      <SectionDivider />
+
+      {/* ═══ 2. Transit Kundali Chart (HERO) ═══ */}
+      {transits && personal?.transit_houses && (
+        <motion.section variants={fadeUp}>
+          <h2 className="font-display text-lg text-star/70 mb-4 tracking-wide">Your Sky Today</h2>
+          <TransitKundaliChart
+            transitPlanets={transits.planets}
+            transitHouses={personal.transit_houses}
+            natalHouses={natalHouses}
+            selectedHouse={null}
+            interpretedPlanets={interpreted?.planet_interpretations?.map(p => ({
+              planet: p.planet,
+              is_favorable: p.is_favorable,
+              tone: p.tone,
+            }))}
+          />
         </motion.section>
       )}
+
+      <SectionDivider />
 
       {/* ═══ 3. Dasha Period Bar ═══ */}
       {dasha && (
@@ -534,24 +680,59 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
         </motion.div>
       )}
 
-      {/* ═══ 3b. Transit Kundali Chart ═══ */}
-      {transits && personal?.transit_houses && (
-        <motion.section variants={fadeUp}>
-          <TransitKundaliChart
-            transitPlanets={transits.planets}
-            transitHouses={personal.transit_houses}
-            natalHouses={natalHouses}
-            selectedHouse={null}
-            interpretedPlanets={interpreted?.planet_interpretations?.map(p => ({
-              planet: p.planet,
-              is_favorable: p.is_favorable,
-              tone: p.tone,
-            }))}
-          />
+      <SectionDivider />
+
+      {/* ═══ 4. Alert Cards — Top 3 + Expandable Remaining ═══ */}
+      {hasAlerts && (
+        <motion.section variants={stagger} initial="hidden" animate="show" className="space-y-3">
+          {/* Top 3 full alert cards */}
+          {topAlerts.map((alert, i) => (
+            <AlertCard key={`${alert.planet}-${alert.house}`} alert={alert} index={i} />
+          ))}
+
+          {/* Remaining planet transits as mini-cards */}
+          {remainingPlanets.length > 0 && (
+            <>
+              <button
+                onClick={() => setShowAllAlerts(!showAllAlerts)}
+                className="flex items-center gap-2 text-sm text-violet-light hover:text-star transition-colors cursor-pointer pt-2"
+              >
+                <span className="font-medium">
+                  {showAllAlerts ? 'Hide Additional Transits' : `Show ${remainingPlanets.length} More Transit${remainingPlanets.length > 1 ? 's' : ''}`}
+                </span>
+                <ChevronIcon open={showAllAlerts} />
+              </button>
+
+              <AnimatePresence initial={false}>
+                {showAllAlerts && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    className="overflow-hidden"
+                  >
+                    <motion.div
+                      variants={stagger}
+                      initial="hidden"
+                      animate="show"
+                      className="space-y-2 pt-1"
+                    >
+                      {remainingPlanets.map(interp => (
+                        <MiniAlertCard key={interp.planet} interp={interp} />
+                      ))}
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          )}
         </motion.section>
       )}
 
-      {/* ═══ 4. Life Area Scores (compact 4-column) ═══ */}
+      <SectionDivider />
+
+      {/* ═══ 5. Life Area Scores (compact 4-column) ═══ */}
       {highImpact?.life_scores && (
         <motion.section variants={fadeUp}>
           <motion.div
@@ -569,7 +750,9 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
         </motion.section>
       )}
 
-      {/* ═══ 5. Upcoming Shifts Timeline ═══ */}
+      <SectionDivider />
+
+      {/* ═══ 6. Upcoming Shifts Timeline ═══ */}
       {timeline.length > 0 && (
         <motion.section variants={fadeUp}>
           <h2 className="text-star font-display text-lg mb-4">Upcoming Shifts</h2>
@@ -586,7 +769,10 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
                 {/* Content */}
                 <div className="pb-5">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-star text-sm font-semibold">{entry.planet}</span>
+                    <span className="text-star text-sm font-semibold">
+                      <span className="text-violet-light mr-1">{PLANET_GLYPHS[entry.planet] ?? ''}</span>
+                      {entry.planet}
+                    </span>
                     <span className={`text-[10px] uppercase tracking-wide font-medium rounded-full px-2 py-0.5 ${
                       entry.nature === 'favorable'
                         ? 'bg-emerald-500/15 text-emerald-400'
@@ -610,12 +796,14 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
         </motion.section>
       )}
 
-      {/* ═══ 6. Full Analysis Toggle ═══ */}
+      <SectionDivider />
+
+      {/* ═══ 7. Full Analysis Toggle ═══ */}
       {interpreted && (
         <motion.section variants={fadeUp}>
           <button
             onClick={() => setDetailOpen(!detailOpen)}
-            className="group flex items-center gap-2 text-sm text-violet-light hover:text-star transition-colors cursor-pointer w-full border-t border-white/5 pt-6"
+            className="group flex items-center gap-2 text-sm text-violet-light hover:text-star transition-colors cursor-pointer w-full pt-2"
           >
             <span className="font-display text-lg">
               {detailOpen ? 'Hide Detailed Analysis' : 'View Detailed Planet Analysis'}
@@ -669,7 +857,10 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
                           className="bg-cosmos border border-white/5 rounded-xl p-4 hover:border-violet/20 transition-colors"
                         >
                           <div className="flex items-start justify-between mb-1.5">
-                            <p className="text-star font-semibold text-sm">{planet.name}</p>
+                            <p className="text-star font-semibold text-sm">
+                              <span className="text-violet-light mr-1.5">{PLANET_GLYPHS[planet.name] ?? ''}</span>
+                              {planet.name}
+                            </p>
                             {planet.retrograde && (
                               <span className="bg-rose/20 text-rose text-[10px] rounded-full px-2 py-0.5 font-medium">
                                 Rx
@@ -763,7 +954,10 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
                     className="bg-cosmos border border-white/5 rounded-xl p-4 hover:border-violet/20 transition-colors"
                   >
                     <div className="flex items-start justify-between mb-1.5">
-                      <p className="text-star font-semibold text-sm">{planet.name}</p>
+                      <p className="text-star font-semibold text-sm">
+                        <span className="text-violet-light mr-1.5">{PLANET_GLYPHS[planet.name] ?? ''}</span>
+                        {planet.name}
+                      </p>
                       {planet.retrograde && (
                         <span className="bg-rose/20 text-rose text-[10px] rounded-full px-2 py-0.5 font-medium">
                           Rx
