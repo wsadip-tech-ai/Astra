@@ -4,6 +4,7 @@ import Navbar from '@/components/layout/Navbar'
 import GlowButton from '@/components/ui/GlowButton'
 import CosmicProfile from '@/components/dashboard/CosmicProfile'
 import CosmicWeather from '@/components/dashboard/CosmicWeather'
+import PersonalitySnapshot from '@/components/dashboard/PersonalitySnapshot'
 import Link from 'next/link'
 import { mapProfile } from '@/lib/profile'
 import type { WesternChartData, CosmicWeatherEntry } from '@/types'
@@ -110,6 +111,9 @@ export default async function DashboardPage() {
 
           {/* Cosmic Profile — Big 3 summary (only if chart is calculated) */}
           {chartData && <CosmicProfile chart={chartData} />}
+
+          {/* Personality Snapshot — compact cosmic blueprint teaser */}
+          {chartData && <PersonalitySnapshot />}
 
           {/* Cosmic Weather — live planetary transits */}
           {cosmicWeather.length > 0 && <CosmicWeather entries={cosmicWeather} />}
