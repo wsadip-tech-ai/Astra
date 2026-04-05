@@ -15,21 +15,28 @@ export async function generateCosmicWeatherReading(params: CosmicWeatherParams):
 
     const prompt = `You are Astra, a warm Vedic astrologer. Write a concise ~150 word personalized daily cosmic weather reading for ${params.userName}.
 
-Their Moon sign: ${params.moonSign}
+Their Moon sign (Janma Rasi): ${params.moonSign}
 Active Dasha: ${params.currentDasha}
-Today's Murthi Nirnaya: ${params.murthi}
+Today's Murthi Nirnaya: ${params.murthi} (Gold=excellent, Silver=good, Copper=moderate, Iron=challenging)
 
-Today's transits: ${params.transitSummary}
+Today's transits:
+${params.transitSummary}
 
 Personal transit aspects: ${params.personalAspects}
 
-Write a warm, actionable reading that:
-1. Opens with the day's overall energy (based on Murthi Nirnaya quality)
-2. Highlights the most significant personal transit aspect
-3. Connects it to their current Dasha period
-4. Ends with one specific, actionable suggestion
+CRITICAL RULES:
+- ONLY reference planet positions and houses listed above. Do NOT invent any positions.
+- When mentioning a planet, state which house it is in from their Moon sign and what life area it affects.
+- Murthi Nirnaya ${params.murthi} sets the overall tone of the day.
+- Connect the most impactful transit to their ${params.currentDasha} period.
 
-Be concise and warm. Use "you/your" language.`
+Write a warm, actionable reading that:
+1. Opens with the day's quality (${params.murthi} day — explain what this means)
+2. Highlights the 2 most significant transits by HOUSE POSITION and life area
+3. Connects it to their current Dasha period
+4. Ends with ONE specific, actionable suggestion (e.g., "take a walk after dinner", "avoid signing contracts today", "call a family member")
+
+Be concise and warm. Use "you/your" language. No generic fluff.`
 
     const response = await client.chat.completions.create({
       model: process.env.CHAT_MODEL || 'gpt-4o-mini',

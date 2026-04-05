@@ -97,6 +97,19 @@ export async function GET() {
               `${a.transit_planet} ${a.aspect_type} natal ${a.natal_planet}`)
             .join(', ')
         }
+        // Add transit house positions to the summary
+        if (personal.transit_houses) {
+          const houseAreas: Record<number, string> = {
+            1: 'Self/Health', 2: 'Finance/Family', 3: 'Communication', 4: 'Home/Emotions',
+            5: 'Creativity/Romance', 6: 'Health/Work', 7: 'Relationships/Marriage',
+            8: 'Transformation', 9: 'Luck/Spirituality', 10: 'Career/Status',
+            11: 'Gains/Friends', 12: 'Expenses/Spirituality',
+          }
+          const houseLines = Object.entries(personal.transit_houses as Record<string, number>)
+            .map(([planet, house]) => `${planet} in ${house}th house (${houseAreas[house] || 'General'})`)
+            .join(', ')
+          transitSummary += `\n\nTransit houses from your Moon (${moonPlanet.sign}): ${houseLines}`
+        }
       }
     }
   } catch {
