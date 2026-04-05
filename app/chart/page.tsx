@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import ChartTabs from '@/components/chart/ChartTabs'
 import GlowButton from '@/components/ui/GlowButton'
-import type { WesternChartData } from '@/types'
+import type { WesternChartData, VedicChartData } from '@/types'
 import { mapProfile } from '@/lib/profile'
 
 function generateSummaryText(chart: WesternChartData): string {
@@ -35,7 +35,7 @@ export default async function ChartPage() {
 
   const { data: chart } = await supabase
     .from('astra_birth_charts')
-    .select('id, date_of_birth, time_of_birth, place_of_birth, western_chart_json')
+    .select('id, date_of_birth, time_of_birth, place_of_birth, western_chart_json, vedic_chart_json')
     .eq('user_id', user.id)
     .limit(1)
     .maybeSingle()
@@ -43,6 +43,7 @@ export default async function ChartPage() {
   if (!chart) redirect('/signup/onboarding')
 
   const chartData = chart.western_chart_json as WesternChartData | null
+  const vedicData = chart.vedic_chart_json as VedicChartData | null
   const tier = profile?.subscription_tier ?? 'free'
 
   if (!chartData) {
@@ -80,6 +81,7 @@ export default async function ChartPage() {
 
           <ChartTabs
             chart={chartData}
+            vedicChart={vedicData}
             summaryText={summaryText}
             tier={tier as 'free' | 'premium'}
           />

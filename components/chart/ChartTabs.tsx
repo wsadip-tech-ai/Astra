@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import type { WesternChartData } from '@/types'
+import type { WesternChartData, VedicChartData } from '@/types'
 import PlanetCard from '@/components/chart/PlanetCard'
 import AspectRow from '@/components/chart/AspectRow'
 import VedicGate from '@/components/chart/VedicGate'
 
 interface ChartTabsProps {
   chart: WesternChartData
+  vedicChart: VedicChartData | null
   summaryText: string
   tier: 'free' | 'premium'
 }
@@ -15,7 +16,7 @@ interface ChartTabsProps {
 const TABS = ['Overview', 'Planets', 'Aspects', 'Vedic'] as const
 type Tab = typeof TABS[number]
 
-export default function ChartTabs({ chart, summaryText, tier }: ChartTabsProps) {
+export default function ChartTabs({ chart, vedicChart, summaryText, tier }: ChartTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>('Overview')
 
   const sun = chart.planets.find(p => p.name === 'Sun')
@@ -83,7 +84,7 @@ export default function ChartTabs({ chart, summaryText, tier }: ChartTabsProps) 
         </div>
       )}
 
-      {activeTab === 'Vedic' && <VedicGate tier={tier} />}
+      {activeTab === 'Vedic' && <VedicGate tier={tier} vedicChart={vedicChart} />}
     </div>
   )
 }

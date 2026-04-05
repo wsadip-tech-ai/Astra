@@ -6,6 +6,7 @@ import { MOCK_WESTERN_CHART, MOCK_SUMMARY_TEXT } from '@/constants/mock-chart'
 describe('ChartTabs', () => {
   const defaultProps = {
     chart: MOCK_WESTERN_CHART,
+    vedicChart: null,
     summaryText: MOCK_SUMMARY_TEXT,
     tier: 'free' as const,
   }
