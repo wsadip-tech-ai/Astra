@@ -12,25 +12,63 @@ interface TransitData {
   planets: { name: string; sign: string; degree: number; nakshatra: string; retrograde: boolean }[]
 }
 
+// Sidereal sign order for house calculation
+const SIDEREAL_SIGNS = [
+  'Mesha', 'Vrishabha', 'Mithuna', 'Karka', 'Simha', 'Kanya',
+  'Tula', 'Vrishchika', 'Dhanu', 'Makara', 'Kumbha', 'Meena',
+]
+
+// Western name to sidereal sign mapping
+const WESTERN_TO_SIDEREAL: Record<string, string> = {
+  aries: 'Mesha', taurus: 'Vrishabha', gemini: 'Mithuna', cancer: 'Karka',
+  leo: 'Simha', virgo: 'Kanya', libra: 'Tula', scorpio: 'Vrishchika',
+  sagittarius: 'Dhanu', capricorn: 'Makara', aquarius: 'Kumbha', pisces: 'Meena',
+}
+
+function getTransitHouse(signIndex: number, transitSignName: string): number {
+  const transitIndex = SIDEREAL_SIGNS.indexOf(transitSignName)
+  if (transitIndex === -1) return 0
+  return ((transitIndex - signIndex + 12) % 12) + 1
+}
+
 export function buildHoroscopePrompt(sign: ZodiacSign, transits?: TransitData): string {
   const today = new Date().toISOString().split('T')[0]
+  const siderealSign = WESTERN_TO_SIDEREAL[sign.name.toLowerCase()] ?? 'Mesha'
+  const signIndex = SIDEREAL_SIGNS.indexOf(siderealSign)
 
   let transitSection = ''
   if (transits && transits.planets.length > 0) {
+    // Calculate which house each transit falls in FOR THIS SIGN
     const planetLines = transits.planets
-      .map(
-        (p) =>
-          `  - ${p.name} in ${p.sign} at ${p.degree.toFixed(2)}° (nakshatra: ${p.nakshatra})${p.retrograde ? ' [retrograde]' : ''}`
-      )
+      .map((p) => {
+        const house = getTransitHouse(signIndex, p.sign)
+        const retro = p.retrograde ? ' [RETROGRADE]' : ''
+        return `  - ${p.name} in ${p.sign} (${house}th house from ${siderealSign}) at ${p.degree}°${retro}`
+      })
       .join('\n')
-    transitSection = `\n\nCurrent planetary positions for ${today}:\n${planetLines}\n\nReference specific transits above when writing the horoscope. Mention at least two planets by name and explain how their positions influence ${sign.name} today.`
+
+    transitSection = `
+
+TRANSIT DATA FOR ${sign.name.toUpperCase()} (${siderealSign}) — ${today}:
+${planetLines}
+
+CRITICAL INSTRUCTIONS:
+- The house numbers above are CALCULATED — they show where each planet transits FROM THIS SIGN. Use these exact house numbers.
+- NEVER say a planet is "in your sign" unless it is listed as being in the 1st house above.
+- Reference at least 3 planets by name with their CORRECT house position.
+- Explain what each transit means for ${sign.name} based on the house it occupies:
+  * 1st house = self/body, 2nd = money/family, 3rd = courage/siblings, 4th = home/mother
+  * 5th = creativity/children, 6th = health/enemies, 7th = relationships/marriage
+  * 8th = transformation/occult, 9th = luck/travel, 10th = career/status
+  * 11th = gains/friends, 12th = expenses/spirituality
+- Mention retrograde planets and their inward-turning effect.`
   }
 
   return `Today's date is ${today}. Generate today's horoscope for ${sign.name} (${sign.dates}, ${sign.element} sign, ruled by ${sign.rulingPlanet}).${transitSection}
 
 Return ONLY valid JSON with no other text:
 {
-  "reading": "A ~200 word horoscope paragraph for ${today}. Be warm, specific, and reference current planetary energy. Write as Astra, a wise and experienced astrologer. Only reference dates in 2026 or later — never mention past years as upcoming.",
+  "reading": "A ~200 word horoscope for ${today}. Reference SPECIFIC planets and their house positions from the transit data. Be warm but factually grounded. Write as Astra, a Vedic astrologer.",
   "lucky_number": <number between 1 and 99>,
   "lucky_color": "<a color name>",
   "compatibility_sign": "<lowercase zodiac sign slug most compatible today>"
