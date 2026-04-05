@@ -636,21 +636,218 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
 
       <SectionDivider />
 
-      {/* ═══ 2. Transit Kundali Chart (HERO) ═══ */}
+      {/* ═══ 2. Transit Kundali Chart (HERO) — 3-Column Dashboard ═══ */}
       {transits && personal?.transit_houses && (
         <motion.section variants={fadeUp}>
           <h2 className="font-display text-lg text-star/70 mb-4 tracking-wide">Your Sky Today</h2>
-          <TransitKundaliChart
-            transitPlanets={transits.planets}
-            transitHouses={personal.transit_houses}
-            natalHouses={natalHouses}
-            selectedHouse={null}
-            interpretedPlanets={interpreted?.planet_interpretations?.map(p => ({
-              planet: p.planet,
-              is_favorable: p.is_favorable,
-              tone: p.tone,
-            }))}
-          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_240px] md:grid-cols-[200px_1fr_200px] gap-3 lg:gap-4">
+
+            {/* ── Left Panel: Today's Energy ── */}
+            <motion.div
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
+              className="bg-nebula/50 backdrop-blur-sm rounded-xl border border-white/5 p-4 space-y-4 order-1 md:order-1"
+            >
+              {/* Murthi Nirnaya */}
+              {personal?.murthi_nirnaya && (() => {
+                const murthiMap: Record<string, { icon: string; glow: string; label: string; color: string }> = {
+                  Gold:   { icon: '\u2609', glow: 'shadow-yellow-400/30 border-yellow-500/30 bg-yellow-500/10', label: 'Excellent Day', color: 'text-yellow-400' },
+                  Silver: { icon: '\u263D', glow: 'shadow-gray-300/20 border-gray-400/25 bg-gray-400/10', label: 'Good Day', color: 'text-gray-300' },
+                  Copper: { icon: '\u2B25', glow: 'shadow-orange-400/20 border-orange-400/25 bg-orange-400/10', label: 'Moderate Day', color: 'text-orange-400' },
+                  Iron:   { icon: '\u2699', glow: 'shadow-gray-500/15 border-gray-600/25 bg-gray-600/10', label: 'Challenging Day', color: 'text-gray-500' },
+                }
+                const m = murthiMap[personal.murthi_nirnaya] ?? murthiMap.Iron
+                return (
+                  <div>
+                    <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-2">Day Quality</p>
+                    <div className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 shadow-lg ${m.glow}`}>
+                      <span className={`text-2xl ${m.color}`}>{m.icon}</span>
+                      <div>
+                        <p className={`text-sm font-semibold ${m.color}`}>{personal.murthi_nirnaya} Murthi</p>
+                        <p className="text-muted text-[11px]">{m.label}</p>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Energy Balance */}
+              {interpreted && (
+                <div>
+                  <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-2">Energy Balance</p>
+                  <div className="h-1.5 rounded-full bg-white/5 overflow-hidden flex">
+                    {(interpreted.favorable_count + interpreted.challenging_count) > 0 && (
+                      <>
+                        <div
+                          className="h-full bg-emerald-500/70 rounded-l-full transition-all"
+                          style={{ width: `${(interpreted.favorable_count / (interpreted.favorable_count + interpreted.challenging_count)) * 100}%` }}
+                        />
+                        <div
+                          className="h-full bg-rose/70 rounded-r-full transition-all"
+                          style={{ width: `${(interpreted.challenging_count / (interpreted.favorable_count + interpreted.challenging_count)) * 100}%` }}
+                        />
+                      </>
+                    )}
+                  </div>
+                  <p className="text-muted text-[11px] mt-1.5">
+                    <span className="text-emerald-400">{interpreted.favorable_count} Supportive</span>
+                    {' \u00B7 '}
+                    <span className="text-rose-light">{interpreted.challenging_count} Challenging</span>
+                  </p>
+                </div>
+              )}
+
+              {/* Current Dasha */}
+              {dasha && (
+                <div>
+                  <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-2">Current Dasha</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 bg-cosmos rounded-lg px-2.5 py-2 text-center border border-white/5">
+                      <span className="text-2xl text-violet-light block leading-none">{PLANET_GLYPHS[dasha.current_mahadasha.planet] ?? ''}</span>
+                      <p className="text-star text-[11px] font-medium mt-1">{dasha.current_mahadasha.planet}</p>
+                      <p className="text-muted text-[9px] uppercase tracking-wider">Maha</p>
+                    </div>
+                    <div className="w-4 h-px bg-white/10" />
+                    <div className="flex-1 bg-cosmos rounded-lg px-2.5 py-2 text-center border border-white/5">
+                      <span className="text-2xl text-violet-light block leading-none">{PLANET_GLYPHS[dasha.current_antardasha.planet] ?? ''}</span>
+                      <p className="text-star text-[11px] font-medium mt-1">{dasha.current_antardasha.planet}</p>
+                      <p className="text-muted text-[9px] uppercase tracking-wider">Antar</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Dominant Element */}
+              {transits.dominant_element && (() => {
+                const elementStyles: Record<string, string> = {
+                  Fire: 'bg-red-500/15 text-red-400 border-red-500/20',
+                  Earth: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
+                  Air: 'bg-yellow-400/15 text-yellow-400 border-yellow-400/20',
+                  Water: 'bg-blue-400/15 text-blue-400 border-blue-400/20',
+                }
+                const style = elementStyles[transits.dominant_element] ?? 'bg-violet/15 text-violet-light border-violet/20'
+                return (
+                  <div>
+                    <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-2">Dominant Element</p>
+                    <span className={`text-[11px] font-medium rounded-full px-3 py-1 border ${style}`}>
+                      {transits.dominant_element}
+                    </span>
+                  </div>
+                )
+              })()}
+            </motion.div>
+
+            {/* ── Center: Kundali Chart ── */}
+            <div className="order-2 md:order-2">
+              <TransitKundaliChart
+                transitPlanets={transits.planets}
+                transitHouses={personal.transit_houses}
+                natalHouses={natalHouses}
+                selectedHouse={null}
+                interpretedPlanets={interpreted?.planet_interpretations?.map(p => ({
+                  planet: p.planet,
+                  is_favorable: p.is_favorable,
+                  tone: p.tone,
+                }))}
+              />
+            </div>
+
+            {/* ── Right Panel: Key Influences ── */}
+            <motion.div
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.15, ease: 'easeOut' }}
+              className="bg-nebula/50 backdrop-blur-sm rounded-xl border border-white/5 p-4 space-y-4 order-3 md:order-3"
+            >
+              {/* Top Influence */}
+              {sortedAlerts[0] && (() => {
+                const top = sortedAlerts[0]
+                const glyph = PLANET_GLYPHS[top.planet] ?? ''
+                const isFav = top.is_favorable
+                return (
+                  <div>
+                    <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-2">Top Influence</p>
+                    <div className="text-center mb-2">
+                      <span className={`text-3xl inline-block ${isFav ? 'text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.4)]' : 'text-rose drop-shadow-[0_0_8px_rgba(236,72,153,0.4)]'}`}>
+                        {glyph}
+                      </span>
+                    </div>
+                    <p className="text-star text-sm font-medium text-center">{top.planet}</p>
+                    <p className="text-muted text-[11px] text-center">in {top.house}{top.house === 1 ? 'st' : top.house === 2 ? 'nd' : top.house === 3 ? 'rd' : 'th'} house &middot; {top.sign}</p>
+                    {top.life_areas[0] && (
+                      <p className="text-violet-light text-[10px] text-center mt-1">{top.life_areas[0]}</p>
+                    )}
+                    <p className="text-muted text-[11px] leading-relaxed mt-2 line-clamp-2">{top.headline}</p>
+                    <span className={`inline-block text-[10px] uppercase tracking-wide font-medium rounded-full px-2.5 py-0.5 mt-2 ${
+                      isFav ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose/15 text-rose'
+                    }`}>
+                      {isFav ? 'Favorable' : 'Challenging'}
+                    </span>
+                  </div>
+                )
+              })()}
+
+              {/* Retrograde Planets */}
+              {(() => {
+                const retrogrades = transits.planets.filter(p => p.retrograde)
+                if (retrogrades.length === 0) return null
+                return (
+                  <div>
+                    <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-2">Retrograde Planets</p>
+                    <div className="space-y-1.5">
+                      {retrogrades.map(p => (
+                        <div key={p.name} className="flex items-center gap-2 bg-cosmos rounded-lg px-2.5 py-1.5 border border-white/5">
+                          <span className="text-violet-light text-base">{PLANET_GLYPHS[p.name] ?? ''}</span>
+                          <span className="text-star text-xs flex-1">{p.name}</span>
+                          <span className="bg-rose/20 text-rose text-[9px] rounded-full px-1.5 py-0.5 font-semibold">Rx</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Houses to Watch */}
+              {personal?.transit_houses && (() => {
+                // Count planets per house
+                const houseCounts: Record<number, { planets: string[]; sign: string }> = {}
+                Object.entries(personal.transit_houses).forEach(([planet, house]) => {
+                  if (!houseCounts[house]) {
+                    const planetData = transits.planets.find(p => p.name === planet)
+                    houseCounts[house] = { planets: [], sign: planetData?.sign ?? '' }
+                  }
+                  houseCounts[house].planets.push(planet)
+                })
+                // Get top 3 houses by planet count
+                const topHouses = Object.entries(houseCounts)
+                  .filter(([, data]) => data.planets.length >= 1)
+                  .sort(([, a], [, b]) => b.planets.length - a.planets.length)
+                  .slice(0, 3)
+
+                if (topHouses.length === 0) return null
+
+                return (
+                  <div>
+                    <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-2">Houses to Watch</p>
+                    <div className="space-y-1.5">
+                      {topHouses.map(([house, data]) => (
+                        <div key={house} className="flex items-center justify-between bg-cosmos rounded-lg px-2.5 py-1.5 border border-white/5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-violet-light text-xs font-semibold">H{house}</span>
+                            <span className="text-muted text-[11px]">{data.sign}</span>
+                          </div>
+                          <span className="text-star text-[11px]">{data.planets.length} planet{data.planets.length > 1 ? 's' : ''}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+            </motion.div>
+
+          </div>
         </motion.section>
       )}
 
