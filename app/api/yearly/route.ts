@@ -67,15 +67,22 @@ ${interpretations.planet_highlights?.map(p => `- ${p.planet}: ${p.text}`).join('
 Current Transits:
 ${transitLines}
 
-Structure the reading as:
-1. Overall theme for the year (based on Dasha lord)
-2. Career & finances (based on 10th/2nd house lords + Dasha)
-3. Relationships & family (based on 7th/4th house + active yogas)
-4. Health & wellbeing (based on 6th house + Mars/Saturn transits)
-5. Spiritual growth (based on 9th/12th house + Jupiter transit)
-6. Key months to watch (when Antardasha transitions happen)
+CRITICAL RULES:
+- ONLY reference planetary positions, houses, and yogas listed above. Do NOT invent any positions.
+- When mentioning a transit planet, reference which house it occupies based on the House Layout above.
+- When discussing timing, use the EXACT Antardasha transition dates listed.
+- Use probabilistic language: "the stars indicate higher probability" not "this will happen."
+- Every section must reference specific data from above — no generic astrology.
 
-Be warm, specific, and reference the actual planetary data. Use probabilistic language.`
+Structure the reading covering ALL 6 areas:
+1. Overall theme for the year (based on Dasha lord and its house position)
+2. Career & finances (based on 10th/2nd house lords from House Layout + relevant transits)
+3. Relationships & family (based on 7th/4th house lords + active yogas affecting these)
+4. Health & wellbeing (based on 6th/8th house lords + Mars/Saturn transit positions)
+5. Spiritual growth (based on 9th/12th house lords + Jupiter's transit position)
+6. Key months to watch (use EXACT Antardasha transition dates — state the month and what shifts)
+
+End with a "Year Mantra" — one motivational line tied to the Dasha lord's energy.`
 }
 
 export async function GET() {
