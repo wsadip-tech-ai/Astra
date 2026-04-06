@@ -104,6 +104,7 @@ def predict_gaja_kesari_windows(
                 "kendra_house": house,
                 "description": _gaja_kesari_description(current_kendra_sign, house, natal_moon_sign),
                 "strength": "strong" if house == 1 else "moderate",
+                **_get_yoga_guidance("gaja_kesari", house),
             })
             in_kendra = False
             window_start = None
@@ -122,20 +123,204 @@ def predict_gaja_kesari_windows(
             "kendra_house": house,
             "description": _gaja_kesari_description(current_kendra_sign, house, natal_moon_sign),
             "strength": "strong" if house == 1 else "moderate",
+            **_get_yoga_guidance("gaja_kesari", house),
         })
 
     return windows
 
 
+# ─── Yoga Guidance Data ──────────────────────────────────────────────────────
+
+GAJA_KESARI_GUIDANCE: dict[int, dict] = {
+    1: {
+        "description": "Jupiter conjuncts your natal Moon — the strongest Gaja Kesari. A landmark period for personal growth, wisdom, and reputation.",
+        "life_areas": ["Career", "Finance", "Reputation", "Education"],
+        "what_to_do": [
+            "Start new ventures — this is your best window for launches",
+            "Invest in education, certifications, or skill development",
+            "Network actively — your charisma and wisdom are at peak",
+            "Make important financial decisions you've been postponing",
+        ],
+        "what_to_avoid": [
+            "Don't stay passive — this energy rewards action",
+            "Avoid arrogance — stay humble as fortune favors you",
+        ],
+        "remedies": {
+            "mantra": "Om Gurave Namah (108 times on Thursdays)",
+            "charity": "Donate yellow items or turmeric on Thursdays",
+            "practice": "Teach or mentor someone — sharing wisdom amplifies this yoga",
+        },
+    },
+    4: {
+        "description": "Jupiter aspects your Moon from the 4th house — domestic happiness, property gains, emotional security, and educational success.",
+        "life_areas": ["Home", "Property", "Family", "Education"],
+        "what_to_do": [
+            "Consider property purchases or home improvements",
+            "Strengthen family bonds — plan gatherings or trips",
+            "Enroll in courses or academic programs",
+            "Create a peaceful home environment — it feeds your success",
+        ],
+        "what_to_avoid": [
+            "Don't neglect home life for career ambitions",
+            "Avoid major conflicts with family members",
+        ],
+        "remedies": {
+            "mantra": "Om Gurave Namah (108 times on Thursdays)",
+            "charity": "Donate to educational institutions",
+            "practice": "Spend quality time with mother or maternal figures",
+        },
+    },
+    7: {
+        "description": "Jupiter aspects your Moon from the 7th house — partnerships, marriage harmony, business growth, and social standing.",
+        "life_areas": ["Marriage", "Partnerships", "Business", "Social Life"],
+        "what_to_do": [
+            "Strengthen your primary relationship — plan something special",
+            "Enter business partnerships or collaborations",
+            "Attend social events — your public image shines",
+            "If single, actively pursue meaningful connections",
+        ],
+        "what_to_avoid": [
+            "Don't take your partner for granted during this blessing",
+            "Avoid signing contracts without reading the fine print",
+        ],
+        "remedies": {
+            "mantra": "Om Gurave Namah (108 times on Thursdays)",
+            "charity": "Donate to couples in need or marriage-support causes",
+            "practice": "Practice gratitude for your relationships daily",
+        },
+    },
+    10: {
+        "description": "Jupiter aspects your Moon from the 10th house — career advancement, public recognition, authority, and professional wisdom.",
+        "life_areas": ["Career", "Public Image", "Authority", "Professional Growth"],
+        "what_to_do": [
+            "Push for promotions, raises, or leadership roles",
+            "Launch professional projects you've been planning",
+            "Build your public profile — write, speak, or publish",
+            "Seek mentorship from seniors in your field",
+        ],
+        "what_to_avoid": [
+            "Don't play small — this is your time to step up",
+            "Avoid office politics — let your work speak",
+        ],
+        "remedies": {
+            "mantra": "Om Gurave Namah (108 times on Thursdays)",
+            "charity": "Donate to professional development programs",
+            "practice": "Set clear career goals and review them weekly",
+        },
+    },
+}
+
+KETU_MOON_GUIDANCE = {
+    "description": "Ketu transits your Moon sign — a period of spiritual awakening, emotional detachment, and past-life themes surfacing.",
+    "life_areas": ["Spirituality", "Emotions", "Inner Growth", "Past Karma"],
+    "what_to_do": [
+        "Embrace meditation and spiritual practices — Ketu deepens inner awareness",
+        "Journal your dreams — they carry important messages now",
+        "Let go of attachments that no longer serve you",
+        "Seek therapy or counseling if old emotions surface",
+    ],
+    "what_to_avoid": [
+        "Don't make major emotional decisions — clarity comes later",
+        "Avoid isolation — stay connected even when you feel withdrawn",
+        "Don't resist change — Ketu removes what isn't aligned",
+    ],
+    "remedies": {
+        "mantra": "Om Ketuve Namah (108 times on Tuesdays)",
+        "charity": "Donate blankets or food to the underprivileged",
+        "practice": "20 minutes of daily meditation, preferably at dawn",
+    },
+}
+
+RAHU_MOON_GUIDANCE = {
+    "description": "Rahu transits your Moon sign — intense desires, restlessness, and unconventional emotional experiences.",
+    "life_areas": ["Mental Health", "Ambition", "Unconventional Paths", "Desires"],
+    "what_to_do": [
+        "Channel restlessness into ambitious projects",
+        "Explore unconventional opportunities — Rahu rewards innovation",
+        "Ground yourself with routine and physical exercise",
+        "Be open to foreign connections or international opportunities",
+    ],
+    "what_to_avoid": [
+        "Don't make impulsive decisions driven by anxiety",
+        "Avoid shortcuts or get-rich-quick schemes",
+        "Reduce screen time and social media — Rahu amplifies mental noise",
+        "Don't ignore your mental health — seek support if needed",
+    ],
+    "remedies": {
+        "mantra": "Om Rahuve Namah (108 times on Saturdays)",
+        "charity": "Donate to outcasts or underprivileged communities",
+        "practice": "Daily grounding: walk barefoot on grass for 10 minutes",
+    },
+}
+
+JUPITER_RETURN_GUIDANCE = {
+    "description": "Jupiter returns to its natal position — a 12-year growth cycle resets. Expansion, optimism, and new opportunities.",
+    "life_areas": ["Personal Growth", "Education", "Wealth", "Spirituality"],
+    "what_to_do": [
+        "Set big goals — this is a once-in-12-years expansion window",
+        "Travel, especially to places of learning or spiritual significance",
+        "Invest in long-term wealth-building strategies",
+        "Start teaching or sharing knowledge — it multiplies",
+    ],
+    "what_to_avoid": [
+        "Don't overcommit — Jupiter can cause over-expansion",
+        "Avoid excessive spending despite feeling abundant",
+    ],
+    "remedies": {
+        "mantra": "Om Gurave Namah (108 times on Thursdays)",
+        "charity": "Donate to temples, schools, or spiritual institutions",
+        "practice": "Write a 12-year vision plan — what do you want by the next return?",
+    },
+}
+
+SATURN_RETURN_GUIDANCE = {
+    "description": "Saturn returns to its natal position — a ~29-year maturity milestone. Life restructures around authenticity and responsibility.",
+    "life_areas": ["Life Direction", "Career", "Responsibilities", "Maturity"],
+    "what_to_do": [
+        "Audit your life honestly — what's working, what isn't?",
+        "Take on greater responsibilities — Saturn rewards commitment",
+        "Build structures that will last (career, relationships, health habits)",
+        "Seek guidance from elders or mentors who've walked your path",
+    ],
+    "what_to_avoid": [
+        "Don't resist the restructuring — what falls away needed to go",
+        "Avoid blaming others — Saturn demands personal accountability",
+        "Don't take shortcuts — build on solid foundations only",
+    ],
+    "remedies": {
+        "mantra": "Om Shanaischaraya Namah (108 times on Saturdays)",
+        "charity": "Serve the elderly, donate black items on Saturdays",
+        "practice": "Create a disciplined daily routine and stick to it for 40 days",
+    },
+}
+
+
+def _get_yoga_guidance(yoga_type: str, house: int = 1) -> dict:
+    """Get guidance data for a yoga type. Returns life_areas, what_to_do, what_to_avoid, remedies."""
+    if yoga_type == "gaja_kesari":
+        g = GAJA_KESARI_GUIDANCE.get(house, GAJA_KESARI_GUIDANCE[1])
+    elif yoga_type == "ketu_moon":
+        g = KETU_MOON_GUIDANCE
+    elif yoga_type == "rahu_moon":
+        g = RAHU_MOON_GUIDANCE
+    elif yoga_type == "jupiter_return":
+        g = JUPITER_RETURN_GUIDANCE
+    elif yoga_type == "saturn_return":
+        g = SATURN_RETURN_GUIDANCE
+    else:
+        return {}
+    return {
+        "life_areas": g.get("life_areas", []),
+        "what_to_do": g.get("what_to_do", []),
+        "what_to_avoid": g.get("what_to_avoid", []),
+        "remedies": g.get("remedies", {}),
+    }
+
+
 def _gaja_kesari_description(jupiter_sign: str, house: int, moon_sign: str) -> str:
     """Human-readable description of a Gaja Kesari window."""
-    house_meanings = {
-        1: f"Jupiter conjuncts your natal Moon in {moon_sign} — the strongest Gaja Kesari. Exceptional wisdom, reputation, and wealth potential. A landmark period for personal growth.",
-        4: f"Jupiter in {jupiter_sign} aspects your Moon from the 4th house — brings domestic happiness, property gains, emotional security, and educational success.",
-        7: f"Jupiter in {jupiter_sign} aspects your Moon from the 7th house — enhances partnerships, marriage harmony, business growth, and social standing.",
-        10: f"Jupiter in {jupiter_sign} aspects your Moon from the 10th house — career advancement, public recognition, authority, and professional wisdom.",
-    }
-    return house_meanings.get(house, f"Jupiter in Kendra from your Moon — activates Gaja Kesari Yoga.")
+    guidance = GAJA_KESARI_GUIDANCE.get(house, GAJA_KESARI_GUIDANCE[1])
+    return f"Jupiter in {jupiter_sign} — {guidance['description']}"
 
 
 def _scan_planet_sign_windows(
@@ -319,8 +504,9 @@ def predict_jupiter_return(
             "start_date": w_start.isoformat(),
             "end_date": w_end.isoformat(),
             "sign": sign,
-            "description": f"Jupiter returns to {sign} — a period of expansion, growth, and renewed purpose in the themes of your natal Jupiter.",
+            "description": f"Jupiter returns to {sign} — {JUPITER_RETURN_GUIDANCE['description']}",
             "strength": "strong",
+            **_get_yoga_guidance("jupiter_return"),
         })
     return results
 
@@ -345,8 +531,9 @@ def predict_saturn_return(
             "start_date": w_start.isoformat(),
             "end_date": w_end.isoformat(),
             "sign": sign,
-            "description": f"Saturn returns to {sign} — a major maturity milestone. Restructuring of responsibilities, career, and life direction.",
+            "description": f"Saturn returns to {sign} — {SATURN_RETURN_GUIDANCE['description']}",
             "strength": "strong",
+            **_get_yoga_guidance("saturn_return"),
         })
     return results
 
@@ -378,8 +565,9 @@ def predict_rahu_ketu_moon_transit(
             "start_date": w_start.isoformat(),
             "end_date": w_end.isoformat(),
             "sign": sign,
-            "description": f"Rahu transits your Moon sign ({sign}) — heightened emotions, obsessive thinking, and karmic intensity. Practice grounding.",
+            "description": f"Rahu transits your Moon sign ({sign}) — {RAHU_MOON_GUIDANCE['description']}",
             "strength": "strong",
+            **_get_yoga_guidance("rahu_moon"),
         })
 
     # Ketu over Moon = Rahu in opposite sign
@@ -390,8 +578,9 @@ def predict_rahu_ketu_moon_transit(
             "start_date": w_start.isoformat(),
             "end_date": w_end.isoformat(),
             "sign": natal_moon_sign,
-            "description": f"Ketu transits your Moon sign ({natal_moon_sign}) — spiritual detachment, past-life themes surface. Embrace inner work.",
+            "description": f"Ketu transits your Moon sign ({natal_moon_sign}) — {KETU_MOON_GUIDANCE['description']}",
             "strength": "strong",
+            **_get_yoga_guidance("ketu_moon"),
         })
 
     results.sort(key=lambda r: r["start_date"])
