@@ -128,8 +128,20 @@ export interface TransitViewProps {
   upcomingAntardashas?: UpcomingAntardasha[]
   natalHouses?: { number: number; sign: string; lord: string }[]
   futureYogas?: {
-    currently_active: { yoga: string; start_date: string; end_date: string; jupiter_sign: string; kendra_house: number; description: string; strength: string }[]
-    upcoming: { yoga: string; start_date: string; end_date: string; jupiter_sign: string; kendra_house: number; description: string; strength: string }[]
+    currently_active: { yoga: string; start_date: string; end_date: string; description: string; strength: string; category?: string; phase?: string; jupiter_sign?: string; kendra_house?: number }[]
+    gaja_kesari: { yoga: string; start_date: string; end_date: string; jupiter_sign: string; kendra_house: number; description: string; strength: string }[]
+    sade_sati: {
+      currently_active: boolean
+      current_phase: string | null
+      phase_details: Record<string, { sign: string; start: string; end: string; description: string }>
+      next_sade_sati: { start: string; end: string } | null
+      description: string
+      remedies: { mantra: string; practice: string; charity: string }
+    }
+    jupiter_return: { start_date: string; end_date: string; sign: string; description: string; strength: string }[]
+    saturn_return: { start_date: string; end_date: string; sign: string; description: string; strength: string }[]
+    rahu_ketu_moon: { yoga: string; start_date: string; end_date: string; sign: string; description: string; strength: string }[]
+    timeline: { yoga: string; start_date: string; end_date: string; description: string; strength: string; category?: string; phase?: string }[]
     next_gaja_kesari: { yoga: string; start_date: string; end_date: string; jupiter_sign: string; kendra_house: number; description: string; strength: string } | null
   } | null
 }
@@ -199,6 +211,42 @@ const ASPECT_MEANINGS: Record<string, { keyword: string; icon: string; color: st
     bgColor: 'bg-sky-400/8 border-sky-400/15',
     effect: (t, n) => `${t} gently opens doors through your natal ${n}. Small efforts yield meaningful results.`,
   },
+}
+
+/* ─── Yoga Category Colors ─── */
+
+const YOGA_CATEGORY_STYLES: Record<string, { text: string; border: string; bg: string; glow: string; badge: string }> = {
+  opportunity: {
+    text: 'text-yellow-400',
+    border: 'border-yellow-500/30',
+    bg: 'bg-yellow-500/5',
+    glow: 'rgba(234, 179, 8, 0.12)',
+    badge: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30',
+  },
+  transformation: {
+    text: 'text-indigo-400',
+    border: 'border-indigo-500/30',
+    bg: 'bg-indigo-500/5',
+    glow: 'rgba(99, 102, 241, 0.12)',
+    badge: 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30',
+  },
+  karmic: {
+    text: 'text-rose-400',
+    border: 'border-rose-500/30',
+    bg: 'bg-rose-500/5',
+    glow: 'rgba(244, 63, 94, 0.12)',
+    badge: 'bg-rose-500/20 text-rose-300 border border-rose-500/30',
+  },
+}
+
+const YOGA_GLYPH: Record<string, string> = {
+  'Gaja Kesari': '\u2643',          // Jupiter
+  'Sade Sati': '\u2644',            // Saturn
+  'Sade Sati (upcoming)': '\u2644',
+  'Jupiter Return': '\u2643',
+  'Saturn Return': '\u2644',
+  'Rahu over Moon': '\u260A',
+  'Ketu over Moon': '\u260B',
 }
 
 const FAST_MOVERS = new Set(['Moon'])
@@ -1067,60 +1115,91 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
 
       <SectionDivider />
 
-      {/* ═══ 6b. Upcoming Yogas ═══ */}
-      {futureYogas && (futureYogas.currently_active.length > 0 || futureYogas.upcoming.length > 0) && (
+      {/* ═══ 6b. Upcoming Yogas — All Types ═══ */}
+      {futureYogas && (futureYogas.currently_active.length > 0 || futureYogas.timeline.length > 0 || futureYogas.sade_sati?.currently_active) && (
         <motion.section variants={fadeUp} className="space-y-4">
           <h2 className="text-star font-display text-lg mb-2">Upcoming Yogas</h2>
 
-          {/* Currently active yogas — golden glow */}
-          {futureYogas.currently_active.map((y, i) => (
+          {/* Sade Sati prominent card — if active */}
+          {futureYogas.sade_sati?.currently_active && (
             <div
-              key={`active-${i}`}
-              className="relative rounded-xl p-5 border border-yellow-500/30 bg-yellow-500/5"
-              style={{ boxShadow: '0 0 24px 2px rgba(234, 179, 8, 0.12)' }}
+              className="relative rounded-xl p-5 border border-indigo-500/30 bg-indigo-500/5"
+              style={{ boxShadow: '0 0 24px 2px rgba(99, 102, 241, 0.15)' }}
             >
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-yellow-400 text-lg">{PLANET_GLYPHS.Jupiter}</span>
-                <span className="text-yellow-400 font-display font-semibold text-base">{y.yoga}</span>
-                <span className="ml-auto text-[10px] uppercase tracking-widest font-bold rounded-full px-3 py-1 bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
-                  Active Now
+                <span className="text-indigo-400 text-lg">{PLANET_GLYPHS.Saturn}</span>
+                <span className="text-indigo-300 font-display font-semibold text-base">Sade Sati</span>
+                <span className="ml-auto text-[10px] uppercase tracking-widest font-bold rounded-full px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  {futureYogas.sade_sati.current_phase} phase
                 </span>
               </div>
-              <p className="text-star/80 text-sm leading-relaxed mb-2">{y.description}</p>
-              <p className="text-muted text-xs">
-                Jupiter in {y.jupiter_sign} ({y.kendra_house}th from Moon) — {y.start_date} to {y.end_date}
-              </p>
+              {futureYogas.sade_sati.current_phase && futureYogas.sade_sati.phase_details[futureYogas.sade_sati.current_phase] && (
+                <p className="text-star/80 text-sm leading-relaxed mb-2">
+                  {futureYogas.sade_sati.phase_details[futureYogas.sade_sati.current_phase].description}
+                </p>
+              )}
+              <div className="mt-3 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/10">
+                <p className="text-indigo-300 text-xs font-medium mb-1.5">Remedies</p>
+                <p className="text-muted text-xs leading-relaxed">
+                  <span className="text-star/70">Mantra:</span> {futureYogas.sade_sati.remedies.mantra}<br />
+                  <span className="text-star/70">Practice:</span> {futureYogas.sade_sati.remedies.practice}<br />
+                  <span className="text-star/70">Charity:</span> {futureYogas.sade_sati.remedies.charity}
+                </p>
+              </div>
             </div>
-          ))}
+          )}
 
-          {/* Next upcoming yoga */}
-          {futureYogas.upcoming.length > 0 && (
-            <div className="space-y-3">
-              {futureYogas.upcoming.slice(0, 3).map((y, i) => (
-                <div
-                  key={`upcoming-${i}`}
-                  className="rounded-xl p-4 border border-white/5 bg-cosmos hover:border-white/10 transition-colors"
-                >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-violet-light text-base">{PLANET_GLYPHS.Jupiter}</span>
-                    <span className="text-star font-display text-sm font-semibold">{y.yoga}</span>
-                    <span className={`ml-auto text-[10px] uppercase tracking-wide font-medium rounded-full px-2 py-0.5 ${
-                      y.strength === 'strong'
-                        ? 'bg-yellow-500/15 text-yellow-400'
-                        : 'bg-violet-light/15 text-violet-light'
-                    }`}>
-                      {y.strength}
-                    </span>
-                  </div>
-                  <p className="text-muted text-xs mb-1">{y.description}</p>
-                  <p className="text-muted/60 text-[11px]">
-                    {new Date(y.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    {' \u2014 '}
-                    {new Date(y.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    {' \u00B7 '}Jupiter in {y.jupiter_sign} ({y.kendra_house}th from Moon)
-                  </p>
+          {/* Currently active yogas (non-Sade Sati) */}
+          {futureYogas.currently_active.filter(y => y.yoga !== 'Sade Sati').map((y, i) => {
+            const style = YOGA_CATEGORY_STYLES[y.category || 'opportunity']
+            return (
+              <div
+                key={`active-${i}`}
+                className={`relative rounded-xl p-5 border ${style.border} ${style.bg}`}
+                style={{ boxShadow: `0 0 24px 2px ${style.glow}` }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <span className={`${style.text} text-lg`}>{YOGA_GLYPH[y.yoga] || PLANET_GLYPHS.Jupiter}</span>
+                  <span className={`${style.text} font-display font-semibold text-base`}>{y.yoga}</span>
+                  <span className={`ml-auto text-[10px] uppercase tracking-widest font-bold rounded-full px-3 py-1 ${style.badge}`}>
+                    Active Now
+                  </span>
                 </div>
-              ))}
+                <p className="text-star/80 text-sm leading-relaxed mb-2">{y.description}</p>
+                <p className="text-muted text-xs">
+                  {y.start_date} to {y.end_date}
+                  {y.jupiter_sign ? ` · Jupiter in ${y.jupiter_sign} (${y.kendra_house}th from Moon)` : ''}
+                </p>
+              </div>
+            )
+          })}
+
+          {/* Timeline — all upcoming yoga events */}
+          {futureYogas.timeline.length > 0 && (
+            <div className="space-y-3">
+              {futureYogas.timeline.filter(e => e.start_date > new Date().toISOString().slice(0, 10)).slice(0, 6).map((y, i) => {
+                const style = YOGA_CATEGORY_STYLES[y.category || 'opportunity']
+                return (
+                  <div
+                    key={`timeline-${i}`}
+                    className="rounded-xl p-4 border border-white/5 bg-cosmos hover:border-white/10 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className={`${style.text} text-base`}>{YOGA_GLYPH[y.yoga] || '\u2728'}</span>
+                      <span className="text-star font-display text-sm font-semibold">{y.yoga}</span>
+                      <span className={`ml-auto text-[10px] uppercase tracking-wide font-medium rounded-full px-2 py-0.5 ${style.badge}`}>
+                        {y.category || 'transit'}
+                      </span>
+                    </div>
+                    <p className="text-muted text-xs mb-1">{y.description}</p>
+                    <p className="text-muted/60 text-[11px]">
+                      {new Date(y.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {' \u2014 '}
+                      {new Date(y.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </p>
+                  </div>
+                )
+              })}
             </div>
           )}
         </motion.section>

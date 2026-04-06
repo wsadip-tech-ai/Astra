@@ -159,36 +159,86 @@ export async function POST(request: Request) {
     }
   }
 
-  // Fetch future yoga predictions
+  // Fetch future yoga predictions (all types: Gaja Kesari, Sade Sati, Jupiter/Saturn Return, Rahu-Ketu Moon)
   let futureYogaContext = ''
   if (vedicChart) {
     try {
-      const moonPlanets = (chart.vedic_chart_json as { planets?: { name: string; sign: string }[] })?.planets ?? []
-      const moonPlanet = moonPlanets.find(p => p.name === 'Moon')
+      const allPlanets = (chart.vedic_chart_json as { planets?: { name: string; sign: string; degree?: number; house?: number }[] })?.planets ?? []
+      const moonPlanet = allPlanets.find(p => p.name === 'Moon')
       if (moonPlanet) {
         const yogaResp = await fetch(`${FASTAPI_BASE_URL}/yogas/predict`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': INTERNAL_SECRET },
-          body: JSON.stringify({ natal_moon_sign: moonPlanet.sign, years_ahead: 3 }),
-          signal: AbortSignal.timeout(5000),
+          body: JSON.stringify({
+            natal_moon_sign: moonPlanet.sign,
+            natal_planets: allPlanets.map(p => ({ name: p.name, sign: p.sign })),
+            years_ahead: 5,
+          }),
+          signal: AbortSignal.timeout(8000),
         })
         if (yogaResp.ok) {
           const yogas = await yogaResp.json()
+
+          // Currently active events
           if (yogas.currently_active?.length > 0) {
-            futureYogaContext += '\n\n## CURRENTLY ACTIVE YOGA\n'
+            futureYogaContext += '\n\n## CURRENTLY ACTIVE YOGAS\n'
             for (const y of yogas.currently_active) {
-              futureYogaContext += `${y.yoga} is ACTIVE NOW (${y.start_date} to ${y.end_date}). Jupiter in ${y.jupiter_sign} (${y.kendra_house}th from Moon). ${y.description}\n`
+              futureYogaContext += `- ${y.yoga} is ACTIVE NOW (${y.start_date} to ${y.end_date}). ${y.description}\n`
+              if (y.phase) futureYogaContext += `  Phase: ${y.phase}\n`
             }
           }
+
+          // Sade Sati status
+          const ss = yogas.sade_sati
+          if (ss) {
+            if (ss.currently_active) {
+              futureYogaContext += `\n## SADE SATI — ACTIVE (${ss.current_phase} phase)\n`
+              const phaseDetail = ss.phase_details?.[ss.current_phase]
+              if (phaseDetail) {
+                futureYogaContext += `${phaseDetail.description} (${phaseDetail.start} to ${phaseDetail.end})\n`
+              }
+              futureYogaContext += `Remedies: ${ss.remedies?.mantra}. ${ss.remedies?.practice}. ${ss.remedies?.charity}.\n`
+            } else if (ss.next_sade_sati) {
+              futureYogaContext += `\n## NEXT SADE SATI\nStarts: ${ss.next_sade_sati.start}, Ends: ${ss.next_sade_sati.end}\n`
+            }
+          }
+
+          // Gaja Kesari
           if (yogas.next_gaja_kesari) {
             const next = yogas.next_gaja_kesari
             futureYogaContext += `\n## NEXT GAJA KESARI YOGA\n`
             futureYogaContext += `Starts: ${next.start_date}, Jupiter enters ${next.jupiter_sign} (${next.kendra_house}th from Moon). Strength: ${next.strength}. ${next.description}\n`
           }
-          if (yogas.upcoming?.length > 1) {
-            futureYogaContext += `\nAll upcoming Gaja Kesari windows (next 3 years):\n`
-            for (const y of yogas.upcoming) {
-              futureYogaContext += `- ${y.start_date} to ${y.end_date}: Jupiter in ${y.jupiter_sign} (${y.kendra_house}th house)\n`
+
+          // Jupiter Return
+          if (yogas.jupiter_return?.length > 0) {
+            futureYogaContext += `\n## JUPITER RETURN\n`
+            for (const w of yogas.jupiter_return) {
+              futureYogaContext += `- ${w.start_date} to ${w.end_date}: ${w.description}\n`
+            }
+          }
+
+          // Saturn Return
+          if (yogas.saturn_return?.length > 0) {
+            futureYogaContext += `\n## SATURN RETURN\n`
+            for (const w of yogas.saturn_return) {
+              futureYogaContext += `- ${w.start_date} to ${w.end_date}: ${w.description}\n`
+            }
+          }
+
+          // Rahu-Ketu over Moon
+          if (yogas.rahu_ketu_moon?.length > 0) {
+            futureYogaContext += `\n## RAHU-KETU MOON TRANSIT\n`
+            for (const w of yogas.rahu_ketu_moon) {
+              futureYogaContext += `- ${w.yoga}: ${w.start_date} to ${w.end_date}. ${w.description}\n`
+            }
+          }
+
+          // Timeline summary
+          if (yogas.timeline?.length > 0) {
+            futureYogaContext += `\nUpcoming yoga timeline (next 5 years):\n`
+            for (const e of yogas.timeline.slice(0, 8)) {
+              futureYogaContext += `- ${e.start_date}: ${e.yoga} [${e.category}] — ${e.description?.slice(0, 80)}\n`
             }
           }
         }

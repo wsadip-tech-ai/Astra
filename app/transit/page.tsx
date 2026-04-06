@@ -103,13 +103,17 @@ export default async function TransitPage() {
         upcomingAntardashas = vedicData.dasha?.upcoming_antardashas ?? []
         natalHouses = vedicData.houses?.map(h => ({ number: h.number, sign: h.sign, lord: h.lord }))
 
-        // Fetch future yoga predictions
+        // Fetch future yoga predictions (all types)
         if (moonPlanet) {
           try {
             const yogaResp = await fetch(`${FASTAPI_BASE_URL}/yogas/predict`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': INTERNAL_SECRET },
-              body: JSON.stringify({ natal_moon_sign: moonPlanet.sign, years_ahead: 3 }),
+              body: JSON.stringify({
+                natal_moon_sign: moonPlanet.sign,
+                natal_planets: vedicData.planets.map(p => ({ name: p.name, sign: p.sign })),
+                years_ahead: 5,
+              }),
             })
             if (yogaResp.ok) futureYogas = await yogaResp.json()
           } catch {
