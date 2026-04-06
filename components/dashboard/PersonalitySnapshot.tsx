@@ -714,45 +714,71 @@ export default function PersonalitySnapshot() {
             </motion.div>
           )}
 
-          {/* ── Section 3: Strengths & Watch Areas ───────────── */}
+          {/* ── Section 3: Strengths & Watch Areas — 2-column visual layout ── */}
           <motion.div variants={fadeUp} className="mb-6">
-            {humanStrengths.length > 0 && (
-              <div className="mb-3">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                  Your Strengths
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {humanStrengths.map(({ raw, human }) => (
-                    <span
-                      key={raw}
-                      className="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.07] px-3 py-1.5 text-xs font-medium leading-snug text-emerald-300"
-                      title={raw}
-                    >
-                      {human}
-                    </span>
-                  ))}
+            <div className="grid gap-4 sm:grid-cols-2">
+              {/* Strengths column */}
+              {humanStrengths.length > 0 && (
+                <div className="rounded-xl border border-emerald-500/10 bg-gradient-to-b from-emerald-500/[0.06] to-transparent p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20">
+                      <svg className="h-3.5 w-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+                    </div>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-emerald-400">
+                      Your Strengths
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    {humanStrengths.map(({ raw, human }, i) => (
+                      <motion.div
+                        key={raw}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: 0.4 + i * 0.08 }}
+                        className="flex items-start gap-2.5 group"
+                        title={raw}
+                      >
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]" />
+                        <p className="text-[13px] leading-snug text-star/85 group-hover:text-star transition-colors">
+                          {human}
+                        </p>
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {humanChallenges.length > 0 && (
-              <div>
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                  Watch Areas
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {humanChallenges.map(({ raw, human }) => (
-                    <span
-                      key={raw}
-                      className="rounded-lg border border-amber-500/15 bg-amber-500/[0.07] px-3 py-1.5 text-xs font-medium leading-snug text-amber-300"
-                      title={raw}
-                    >
-                      {human}
-                    </span>
-                  ))}
+              {/* Watch Areas column */}
+              {humanChallenges.length > 0 && (
+                <div className="rounded-xl border border-amber-500/10 bg-gradient-to-b from-amber-500/[0.06] to-transparent p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/20">
+                      <svg className="h-3.5 w-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+                    </div>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-amber-400">
+                      Areas to Watch
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    {humanChallenges.map(({ raw, human }, i) => (
+                      <motion.div
+                        key={raw}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: 0.5 + i * 0.08 }}
+                        className="flex items-start gap-2.5 group"
+                        title={raw}
+                      >
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(245,158,11,0.5)]" />
+                        <p className="text-[13px] leading-snug text-star/85 group-hover:text-star transition-colors">
+                          {human}
+                        </p>
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </motion.div>
 
           {/* ── Life Themes (compact) ────────────────────────── */}
