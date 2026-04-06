@@ -267,12 +267,6 @@ function buildPunchyInsights(data: {
       }
     }
     if (bestPunch) insights.push({ icon: 'book', label: 'Your Path', text: bestPunch })
-    } else {
-      const first = career.split('.')[0]?.trim()
-      if (first && first.length > 20) {
-        insights.push({ icon: 'book', label: 'Your Path', text: first })
-      }
-    }
   }
 
   // Fallback: if we got fewer than 2 insights, add outer expression
