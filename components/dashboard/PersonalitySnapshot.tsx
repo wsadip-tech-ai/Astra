@@ -620,32 +620,52 @@ export default function PersonalitySnapshot() {
             </Link>
           </motion.div>
 
-          {/* ── Section 1: "What the Stars Say" ──────────────── */}
+          {/* ── Section 1: "What the Stars Say" — visually striking ── */}
           {insights.length > 0 && (
-            <motion.div variants={fadeUp} className="mb-6 space-y-3">
-              <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted">
+            <motion.div variants={fadeUp} className="mb-6">
+              <p className="mb-4 text-[11px] font-semibold uppercase tracking-wider text-muted">
                 What the Stars Say About You
               </p>
-              {insights.map((insight, i) => {
-                const iconMap = { flame: FlameIcon, scale: ScaleIcon, book: BookIcon }
-                const Icon = iconMap[insight.icon] ?? FlameIcon
-                return (
-                  <div
-                    key={i}
-                    className="flex items-start gap-3 rounded-xl border-l-2 border-violet/30 bg-violet/[0.04] py-3 pl-4 pr-4"
-                  >
-                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet/10">
-                      <Icon className="h-4 w-4 text-violet-light" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-wider text-violet-light mb-0.5">{insight.label}</p>
-                      <p className="text-sm leading-relaxed text-star/90">
+              <div className="grid gap-3 sm:grid-cols-3">
+                {insights.map((insight, i) => {
+                  const styles = [
+                    { gradient: 'from-orange-500/15 via-rose/10 to-transparent', border: 'border-orange-500/25', iconBg: 'bg-orange-500/20', iconColor: 'text-orange-400', glow: 'shadow-orange-500/10' },
+                    { gradient: 'from-violet/15 via-indigo-500/10 to-transparent', border: 'border-violet/25', iconBg: 'bg-violet/20', iconColor: 'text-violet-light', glow: 'shadow-violet/10' },
+                    { gradient: 'from-emerald-500/15 via-teal-500/10 to-transparent', border: 'border-emerald-500/25', iconBg: 'bg-emerald-500/20', iconColor: 'text-emerald-400', glow: 'shadow-emerald-500/10' },
+                  ]
+                  const s = styles[i] ?? styles[0]
+                  const iconMap = { flame: FlameIcon, scale: ScaleIcon, book: BookIcon }
+                  const Icon = iconMap[insight.icon] ?? FlameIcon
+
+                  return (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 16, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ duration: 0.5, delay: 0.1 + i * 0.12, ease: [0.25, 0.46, 0.45, 0.94] }}
+                      className={`group relative overflow-hidden rounded-xl border ${s.border} bg-gradient-to-br ${s.gradient} p-4 shadow-lg ${s.glow} transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-default`}
+                    >
+                      {/* Decorative glow orb */}
+                      <div className={`pointer-events-none absolute -top-6 -right-6 h-20 w-20 rounded-full blur-2xl opacity-40 ${s.iconBg}`} />
+
+                      {/* Icon */}
+                      <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${s.iconBg} shadow-inner`}>
+                        <Icon className={`h-5 w-5 ${s.iconColor}`} />
+                      </div>
+
+                      {/* Label */}
+                      <p className={`text-[10px] font-bold uppercase tracking-widest ${s.iconColor} mb-1.5`}>
+                        {insight.label}
+                      </p>
+
+                      {/* Punchy text */}
+                      <p className="font-display text-[15px] leading-snug text-star">
                         {insight.text}
                       </p>
-                    </div>
-                  </div>
-                )
-              })}
+                    </motion.div>
+                  )
+                })}
+              </div>
             </motion.div>
           )}
 
