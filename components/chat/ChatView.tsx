@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import MessageBubble from '@/components/chat/MessageBubble'
 import ChatInput from '@/components/chat/ChatInput'
 import DailyLimitBanner from '@/components/chat/DailyLimitBanner'
@@ -17,10 +18,10 @@ interface ChatViewProps {
   messageLimit: number
   messagesUsed: number
   isPremium: boolean
-  initialPrompt?: string
 }
 
-export default function ChatView({ userName, messageLimit, messagesUsed, isPremium, initialPrompt }: ChatViewProps) {
+export default function ChatView({ userName, messageLimit, messagesUsed, isPremium }: ChatViewProps) {
+  const searchParams = useSearchParams()
   const [messages, setMessages] = useState<Message[]>([])
   const [streaming, setStreaming] = useState(false)
   const [limitReached, setLimitReached] = useState(false)
@@ -29,27 +30,24 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
   const [history, setHistory] = useState<Message[]>([])
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
-
-  // DON'T auto-load history — start fresh every session.
-  // History is loaded on-demand when user clicks "Previous conversations".
+  const promptSentRef = useRef(false)
 
   useEffect(() => {
-    // Scroll to bottom on new messages
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages])
 
-  // Auto-send initial prompt from URL query param (e.g., from dashboard quick prompts)
-  const [promptSent, setPromptSent] = useState(false)
+  // Read prompt from URL on client side and auto-send
   useEffect(() => {
-    if (initialPrompt && !promptSent && !streaming) {
-      setPromptSent(true)
-      const timer = setTimeout(() => handleSend(initialPrompt), 300)
+    const prompt = searchParams.get('prompt')
+    if (prompt && !promptSentRef.current && !streaming) {
+      promptSentRef.current = true
+      const timer = setTimeout(() => handleSend(prompt), 400)
       return () => clearTimeout(timer)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialPrompt, promptSent])
+  }, [searchParams])
 
   async function loadPreviousConversations() {
     if (historyLoaded) {

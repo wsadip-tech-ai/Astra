@@ -1,11 +1,11 @@
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import ChatView from '@/components/chat/ChatView'
 import { mapProfile } from '@/lib/profile'
 
-export default async function ChatPage({ searchParams }: { searchParams: Promise<{ prompt?: string }> }) {
-  const { prompt: initialPrompt } = await searchParams
+export default async function ChatPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -36,13 +36,14 @@ export default async function ChatPage({ searchParams }: { searchParams: Promise
     <>
       <Navbar />
       <main className="h-screen bg-void pt-16">
-        <ChatView
-          userName={firstName}
-          messageLimit={3}
-          messagesUsed={messagesUsed}
-          isPremium={isPremium}
-          initialPrompt={initialPrompt}
-        />
+        <Suspense fallback={<div className="flex-1 flex items-center justify-center"><div className="text-muted text-sm">Loading chat...</div></div>}>
+          <ChatView
+            userName={firstName}
+            messageLimit={3}
+            messagesUsed={messagesUsed}
+            isPremium={isPremium}
+          />
+        </Suspense>
       </main>
     </>
   )
