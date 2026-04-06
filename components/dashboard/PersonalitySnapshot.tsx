@@ -132,14 +132,84 @@ function getYogaDescription(yogaName: string): string {
 
 /* ── Extract insights from API text ─────────────────────────────────── */
 
-function extractBestSentence(text: string | undefined): string {
-  if (!text) return ''
-  // Pick the first substantial sentence (>30 chars)
-  const sentences = text
-    .split(/[.!]/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 30)
-  return sentences[0] ?? text.slice(0, 100)
+interface InsightResult {
+  icon: 'flame' | 'scale' | 'book'
+  label: string
+  text: string
+}
+
+function buildPunchyInsights(data: {
+  personality: { core_nature: string; emotional_nature: string; outer_expression: string; strengths: string[] }
+  career?: { direction: string }
+}): InsightResult[] {
+  const insights: InsightResult[] = []
+
+  // 1. Core identity from lagna — extract the key trait words
+  const core = data.personality.core_nature
+  if (core) {
+    // Look for trait patterns: "dynamic, courageous", "practical, grounded", etc.
+    const traitMatch = core.match(/fundamentally\s+([^.]+)/i) || core.match(/native is\s+([^.]+)/i)
+    const lordMatch = core.match(/lagna lord (\w+) is placed in house (\d+)/i) || core.match(/(\w+) in .+ is ([^,]+)/i)
+
+    let text = ''
+    if (traitMatch) {
+      const traits = traitMatch[1].replace(/and /g, '').split(',').map(t => t.trim()).filter(t => t.length > 2).slice(0, 2)
+      text = `You are naturally ${traits.join(' and ')} at your core`
+    }
+    if (lordMatch && text) {
+      const planet = lordMatch[1]
+      text += ` — ${planet} drives your personality with force and determination`
+    }
+    if (text) insights.push({ icon: 'flame', label: 'Your Core', text })
+  }
+
+  // 2. Emotional nature from Moon
+  const emotional = data.personality.emotional_nature
+  if (emotional) {
+    const moonMatch = emotional.match(/Moon in (\w+) (?:confers|gives|creates|brings)\s+([^.]+)/i)
+    if (moonMatch) {
+      const qualities = moonMatch[2].replace(/and an? /g, '').replace(/innate /g, '').replace(/\s+/g, ' ').trim()
+      insights.push({ icon: 'scale', label: 'Your Heart', text: `Emotionally, you bring ${qualities.split(',').slice(0, 2).join(' and ').replace(/\s+/g, ' ').trim()}` })
+    } else {
+      // Fallback: extract first meaningful phrase
+      const first = emotional.split('.')[0]?.trim()
+      if (first && first.length > 20) {
+        insights.push({ icon: 'scale', label: 'Your Heart', text: first.replace(/^Moon in \w+ /i, 'Your emotional nature — ') })
+      }
+    }
+  }
+
+  // 3. Career/life direction
+  const career = data.career?.direction
+  if (career) {
+    const careerMatch = career.match(/inclining the native toward\s+([^.]+)/i)
+    const lordMatch2 = career.match(/Lord of 10th in \d+th\s*[—–-]\s*([^;.]+)/i)
+
+    if (careerMatch) {
+      const fields = careerMatch[1].trim()
+      let text = `Your career thrives in ${fields}`
+      if (lordMatch2) {
+        const lordText = lordMatch2[1].trim()
+        text = `${lordText.charAt(0).toUpperCase() + lordText.slice(1)} — your career thrives in ${fields.split(',').slice(0, 2).join(' and ').trim()}`
+      }
+      insights.push({ icon: 'book', label: 'Your Path', text })
+    } else {
+      const first = career.split('.')[0]?.trim()
+      if (first && first.length > 20) {
+        insights.push({ icon: 'book', label: 'Your Path', text: first })
+      }
+    }
+  }
+
+  // Fallback: if we got fewer than 2 insights, add outer expression
+  if (insights.length < 2 && data.personality.outer_expression) {
+    const outer = data.personality.outer_expression.split(':').pop()?.split('.')[0]?.trim()
+    if (outer && outer.length > 20) {
+      insights.push({ icon: 'book', label: 'Your Expression', text: outer })
+    }
+  }
+
+  return insights.slice(0, 3)
 }
 
 /* ── Inline SVG icons (no dependency needed) ────────────────────────── */
@@ -406,17 +476,8 @@ export default function PersonalitySnapshot() {
 
   const { personality, career, life_themes } = data!
 
-  // Section 1: Top 3 punchy insights from the narrative text
-  const insightSources = [
-    personality.core_nature,
-    career?.direction,
-    personality.emotional_nature,
-  ].filter(Boolean)
-
-  const insights = insightSources
-    .map((src) => extractBestSentence(src))
-    .filter((s) => s.length > 0)
-    .slice(0, 3)
+  // Section 1: Top 3 punchy insights — human-readable, no jargon
+  const insights = buildPunchyInsights(data!)
 
   // Section 2: Extract yogas from strengths
   const yogas = personality.strengths.filter((s) => /yoga/i.test(s))
@@ -485,8 +546,9 @@ export default function PersonalitySnapshot() {
               <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted">
                 What the Stars Say About You
               </p>
-              {insights.map((text, i) => {
-                const Icon = INSIGHT_ICONS[i % INSIGHT_ICONS.length]
+              {insights.map((insight, i) => {
+                const iconMap = { flame: FlameIcon, scale: ScaleIcon, book: BookIcon }
+                const Icon = iconMap[insight.icon] ?? FlameIcon
                 return (
                   <div
                     key={i}
@@ -495,9 +557,12 @@ export default function PersonalitySnapshot() {
                     <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet/10">
                       <Icon className="h-4 w-4 text-violet-light" />
                     </div>
-                    <p className="text-sm leading-relaxed text-star/90">
-                      {text}
-                    </p>
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-violet-light mb-0.5">{insight.label}</p>
+                      <p className="text-sm leading-relaxed text-star/90">
+                        {insight.text}
+                      </p>
+                    </div>
                   </div>
                 )
               })}
