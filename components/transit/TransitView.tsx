@@ -127,6 +127,11 @@ export interface TransitViewProps {
   } | null
   upcomingAntardashas?: UpcomingAntardasha[]
   natalHouses?: { number: number; sign: string; lord: string }[]
+  futureYogas?: {
+    currently_active: { yoga: string; start_date: string; end_date: string; jupiter_sign: string; kendra_house: number; description: string; strength: string }[]
+    upcoming: { yoga: string; start_date: string; end_date: string; jupiter_sign: string; kendra_house: number; description: string; strength: string }[]
+    next_gaja_kesari: { yoga: string; start_date: string; end_date: string; jupiter_sign: string; kendra_house: number; description: string; strength: string } | null
+  } | null
 }
 
 /* ─── Constants ─── */
@@ -624,7 +629,7 @@ function TimelineDot({ nature }: { nature: string }) {
 
 /* ─── Main Component ─── */
 
-export default function TransitView({ transits, personal, interpreted, dasha, upcomingAntardashas, natalHouses }: TransitViewProps) {
+export default function TransitView({ transits, personal, interpreted, dasha, upcomingAntardashas, natalHouses, futureYogas }: TransitViewProps) {
   const [detailOpen, setDetailOpen] = useState(false)
   const [showAllAlerts, setShowAllAlerts] = useState(false)
 
@@ -1057,6 +1062,67 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
               </div>
             ))}
           </div>
+        </motion.section>
+      )}
+
+      <SectionDivider />
+
+      {/* ═══ 6b. Upcoming Yogas ═══ */}
+      {futureYogas && (futureYogas.currently_active.length > 0 || futureYogas.upcoming.length > 0) && (
+        <motion.section variants={fadeUp} className="space-y-4">
+          <h2 className="text-star font-display text-lg mb-2">Upcoming Yogas</h2>
+
+          {/* Currently active yogas — golden glow */}
+          {futureYogas.currently_active.map((y, i) => (
+            <div
+              key={`active-${i}`}
+              className="relative rounded-xl p-5 border border-yellow-500/30 bg-yellow-500/5"
+              style={{ boxShadow: '0 0 24px 2px rgba(234, 179, 8, 0.12)' }}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-yellow-400 text-lg">{PLANET_GLYPHS.Jupiter}</span>
+                <span className="text-yellow-400 font-display font-semibold text-base">{y.yoga}</span>
+                <span className="ml-auto text-[10px] uppercase tracking-widest font-bold rounded-full px-3 py-1 bg-yellow-500/20 text-yellow-300 border border-yellow-500/30">
+                  Active Now
+                </span>
+              </div>
+              <p className="text-star/80 text-sm leading-relaxed mb-2">{y.description}</p>
+              <p className="text-muted text-xs">
+                Jupiter in {y.jupiter_sign} ({y.kendra_house}th from Moon) — {y.start_date} to {y.end_date}
+              </p>
+            </div>
+          ))}
+
+          {/* Next upcoming yoga */}
+          {futureYogas.upcoming.length > 0 && (
+            <div className="space-y-3">
+              {futureYogas.upcoming.slice(0, 3).map((y, i) => (
+                <div
+                  key={`upcoming-${i}`}
+                  className="rounded-xl p-4 border border-white/5 bg-cosmos hover:border-white/10 transition-colors"
+                >
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="text-violet-light text-base">{PLANET_GLYPHS.Jupiter}</span>
+                    <span className="text-star font-display text-sm font-semibold">{y.yoga}</span>
+                    <span className={`ml-auto text-[10px] uppercase tracking-wide font-medium rounded-full px-2 py-0.5 ${
+                      y.strength === 'strong'
+                        ? 'bg-yellow-500/15 text-yellow-400'
+                        : 'bg-violet-light/15 text-violet-light'
+                    }`}>
+                      {y.strength}
+                    </span>
+                  </div>
+                  <p className="text-muted text-xs mb-1">{y.description}</p>
+                  <p className="text-muted/60 text-[11px]">
+                    {new Date(y.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {' \u2014 '}
+                    {new Date(y.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {' \u00B7 '}Jupiter in {y.jupiter_sign} ({y.kendra_house}th from Moon)
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </motion.section>
       )}
 

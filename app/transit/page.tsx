@@ -34,6 +34,7 @@ export default async function TransitPage() {
   let dasha: TransitViewProps['dasha'] = undefined
   let upcomingAntardashas: { planet: string; start: string; end: string }[] = []
   let natalHouses: { number: number; sign: string; lord: string }[] | undefined
+  let futureYogas: TransitViewProps['futureYogas'] = null
   if (transits) {
     try {
       const { data: chart } = await supabase
@@ -101,6 +102,20 @@ export default async function TransitPage() {
         dasha = vedicData.dasha ?? undefined
         upcomingAntardashas = vedicData.dasha?.upcoming_antardashas ?? []
         natalHouses = vedicData.houses?.map(h => ({ number: h.number, sign: h.sign, lord: h.lord }))
+
+        // Fetch future yoga predictions
+        if (moonPlanet) {
+          try {
+            const yogaResp = await fetch(`${FASTAPI_BASE_URL}/yogas/predict`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': INTERNAL_SECRET },
+              body: JSON.stringify({ natal_moon_sign: moonPlanet.sign, years_ahead: 3 }),
+            })
+            if (yogaResp.ok) futureYogas = await yogaResp.json()
+          } catch {
+            // Future yoga prediction failed — skip
+          }
+        }
       }
     } catch (err) {
       console.error('[transit/page] Failed to fetch personal transits:', err)
@@ -113,7 +128,7 @@ export default async function TransitPage() {
       <main className="min-h-screen bg-void pt-24 px-6">
         <div className="max-w-4xl mx-auto py-12">
           {transits ? (
-            <TransitView transits={transits} personal={personal} interpreted={interpreted} dasha={dasha} upcomingAntardashas={upcomingAntardashas} natalHouses={natalHouses} />
+            <TransitView transits={transits} personal={personal} interpreted={interpreted} dasha={dasha} upcomingAntardashas={upcomingAntardashas} natalHouses={natalHouses} futureYogas={futureYogas} />
           ) : (
             <div className="text-center py-24">
               <div className="text-5xl mb-4">🔭</div>
