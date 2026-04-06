@@ -25,30 +25,13 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
   const [streaming, setStreaming] = useState(false)
   const [limitReached, setLimitReached] = useState(false)
   const [count, setCount] = useState(messagesUsed)
+  const [showHistory, setShowHistory] = useState(false)
+  const [history, setHistory] = useState<Message[]>([])
+  const [historyLoaded, setHistoryLoaded] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Load previous messages from Supabase on mount.
-  // Requires the `astra_chat_messages` table. Falls back to empty state if unavailable.
-  useEffect(() => {
-    async function loadHistory() {
-      try {
-        const resp = await fetch('/api/chat/session')
-        if (resp.ok) {
-          const data = await resp.json()
-          if (data.messages?.length > 0) {
-            setMessages(data.messages.map((m: { role: string; content: string; created_at: string }) => ({
-              role: m.role,
-              content: m.content,
-              timestamp: m.created_at,
-            })))
-          }
-        }
-      } catch {
-        // Failed to load history — start fresh
-      }
-    }
-    loadHistory()
-  }, [])
+  // DON'T auto-load history — start fresh every session.
+  // History is loaded on-demand when user clicks "Previous conversations".
 
   useEffect(() => {
     // Scroll to bottom on new messages
@@ -62,12 +45,35 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
   useEffect(() => {
     if (initialPrompt && !promptSent && !streaming) {
       setPromptSent(true)
-      // Small delay to let history load first
-      const timer = setTimeout(() => handleSend(initialPrompt), 800)
+      const timer = setTimeout(() => handleSend(initialPrompt), 300)
       return () => clearTimeout(timer)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialPrompt, promptSent, streaming])
+  }, [initialPrompt, promptSent])
+
+  async function loadPreviousConversations() {
+    if (historyLoaded) {
+      setShowHistory(!showHistory)
+      return
+    }
+    try {
+      const resp = await fetch('/api/chat/session')
+      if (resp.ok) {
+        const data = await resp.json()
+        if (data.messages?.length > 0) {
+          setHistory(data.messages.map((m: { role: string; content: string; created_at: string }) => ({
+            role: m.role,
+            content: m.content,
+            timestamp: m.created_at,
+          })))
+        }
+      }
+    } catch {
+      // Failed — no history
+    }
+    setHistoryLoaded(true)
+    setShowHistory(true)
+  }
 
   async function handleSend(text: string) {
     // Add user message
@@ -183,15 +189,57 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-4">
-        {messages.length === 0 && (
+        {/* Previous conversations toggle */}
+        {showHistory && history.length > 0 && (
+          <div className="mb-4">
+            <div className="bg-nebula/50 border border-white/5 rounded-xl p-4 max-h-60 overflow-y-auto">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase">Previous Conversations</p>
+                <button
+                  onClick={() => setShowHistory(false)}
+                  className="text-muted text-xs hover:text-star transition-colors cursor-pointer"
+                >
+                  Hide
+                </button>
+              </div>
+              <div className="space-y-2">
+                {history.map((msg, i) => (
+                  <div key={`hist-${i}`} className={`text-xs leading-relaxed ${msg.role === 'user' ? 'text-star/70' : 'text-muted'}`}>
+                    <span className="font-semibold text-[10px] uppercase tracking-wide mr-1.5">{msg.role === 'user' ? 'You' : 'Astra'}:</span>
+                    {msg.content.length > 150 ? msg.content.slice(0, 147) + '...' : msg.content}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {messages.length === 0 && !showHistory && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4">
+            <div className="text-center">
+              <div className="text-4xl mb-3">✦</div>
+              <p className="text-star font-display text-xl mb-2">Hello, {userName}</p>
+              <p className="text-muted text-sm mb-4">Ask me anything about your chart, your stars, or your path ahead.</p>
+            </div>
+            <button
+              onClick={loadPreviousConversations}
+              className="text-violet-light/60 text-xs hover:text-violet-light transition-colors cursor-pointer"
+            >
+              View previous conversations →
+            </button>
+          </div>
+        )}
+
+        {messages.length === 0 && showHistory && history.length === 0 && (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="text-4xl mb-3">✦</div>
               <p className="text-star font-display text-xl mb-2">Hello, {userName}</p>
-              <p className="text-muted text-sm">Ask me anything about your chart, your stars, or your path ahead.</p>
+              <p className="text-muted text-sm">This is your first conversation. Ask me anything!</p>
             </div>
           </div>
         )}
+
         {messages.map((msg, i) => (
           <MessageBubble
             key={i}
