@@ -67,32 +67,46 @@ function humanizeStrength(raw: string): string {
   // Yogas are already meaningful — keep them
   if (/yoga/i.test(raw)) return raw
 
-  // Pattern: "Planet in Nth house"
-  const match = raw.match(/^(\w+)\s+in\s+(\d+)(?:st|nd|rd|th)\s+house/i)
-  if (match) {
-    const planet = match[1]
-    const houseKey = `${match[2]}${ordinalSuffix(Number(match[2]))}`
+  // Extract planet name and house number from various formats:
+  // "Sun strong in house 9 (trikona)"
+  // "Sun in 9th house"
+  // "Jupiter in dusthana house 8"
+  // "Mars exalted in 10th house"
+  let planet = ''
+  let houseNum = 0
+
+  // Pattern 1: "Planet strong/exalted in house N"
+  const match1 = raw.match(/^(\w+)\s+(?:strong|exalted|placed)?\s*in\s+(?:dusthana\s+)?house\s+(\d+)/i)
+  // Pattern 2: "Planet in Nth house"
+  const match2 = raw.match(/^(\w+)\s+(?:strong\s+)?in\s+(\d+)(?:st|nd|rd|th)\s+house/i)
+
+  if (match1) {
+    planet = match1[1]
+    houseNum = Number(match1[2])
+  } else if (match2) {
+    planet = match2[1]
+    houseNum = Number(match2[2])
+  }
+
+  if (planet && houseNum >= 1 && houseNum <= 12) {
+    const houseKey = `${houseNum}${ordinalSuffix(houseNum)}`
     const planetMeaning = PLANET_QUALITIES[planet]
     const houseMeaning = HOUSE_MEANINGS[houseKey]
 
+    const isExalted = /exalted/i.test(raw)
+    const isDusthana = /dusthana/i.test(raw)
+
+    if (isDusthana && houseMeaning) {
+      return `${planetMeaning || planet} challenged in ${houseMeaning}`
+    }
+    if (isExalted && houseMeaning) {
+      return `Exceptional ${planetMeaning || `${planet} power`} in ${houseMeaning}`
+    }
     if (planetMeaning && houseMeaning) {
       return `Strong ${planetMeaning} in ${houseMeaning}`
     }
     if (houseMeaning) {
       return `${planet} energy focused on ${houseMeaning}`
-    }
-  }
-
-  // Pattern: "Planet exalted in Nth house"
-  const exaltedMatch = raw.match(
-    /^(\w+)\s+exalted\s+in\s+(\d+)(?:st|nd|rd|th)\s+house/i,
-  )
-  if (exaltedMatch) {
-    const planet = exaltedMatch[1]
-    const houseKey = `${exaltedMatch[2]}${ordinalSuffix(Number(exaltedMatch[2]))}`
-    const houseMeaning = HOUSE_MEANINGS[houseKey]
-    if (houseMeaning) {
-      return `Exceptional ${PLANET_QUALITIES[planet] ?? `${planet} power`} in ${houseMeaning}`
     }
   }
 
@@ -384,10 +398,6 @@ function ChevronRightIcon({ className }: { className?: string }) {
     </svg>
   )
 }
-
-/* ── Insight icon picker ────────────────────────────────────────────── */
-
-const INSIGHT_ICONS = [FlameIcon, ScaleIcon, BookOpenIcon]
 
 /* ── Stagger animation helpers ──────────────────────────────────────── */
 
