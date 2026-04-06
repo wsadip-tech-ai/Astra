@@ -799,27 +799,71 @@ export default function PersonalitySnapshot() {
                   const yogaMatch = theme.match(/^(\w+\s+Yoga)[:\s]+(.+)/i)
                   const dashaMatch = theme.match(/Current\s+(\w+)\s+mahadasha.*?emphasizes?\s+(.+)/i)
 
+                  // House-specific life interpretations — what it means for YOU
+                  const HOUSE_LIFE_MEANINGS: Record<string, { title: string; meaning: string; icon: 'star' | 'sparkle' | 'orbit' | 'compass' }> = {
+                    '1': { title: 'Self & Identity', meaning: 'Your personality is magnetic — people notice you the moment you walk in', icon: 'star' },
+                    '2': { title: 'Wealth & Family', meaning: 'Money flows toward you naturally — family is your foundation of strength', icon: 'compass' },
+                    '3': { title: 'Communication', meaning: 'Your words carry power — writing, speaking, or creating opens doors for you', icon: 'compass' },
+                    '4': { title: 'Home & Emotions', meaning: 'Home is your sanctuary — deep emotional bonds and property gains define this area', icon: 'star' },
+                    '5': { title: 'Creativity & Romance', meaning: 'Creative brilliance runs through you — romance and children bring joy', icon: 'sparkle' },
+                    '6': { title: 'Health & Service', meaning: 'You overcome obstacles with persistence — health and daily discipline are your tools', icon: 'orbit' },
+                    '7': { title: 'Love & Partnerships', meaning: 'Relationships are central to your journey — partners shape your growth profoundly', icon: 'star' },
+                    '8': { title: 'Transformation', meaning: 'You transform through crises — hidden resources and deep research empower you', icon: 'orbit' },
+                    '9': { title: 'Wisdom & Fortune', meaning: 'Luck favours you — travel, philosophy, and higher learning expand your world', icon: 'compass' },
+                    '10': { title: 'Career & Legacy', meaning: 'You are destined for public recognition — career achievements define your legacy', icon: 'star' },
+                    '11': { title: 'Gains & Network', meaning: 'Your network is your net worth — friends and communities amplify your success', icon: 'compass' },
+                    '12': { title: 'Spirituality & Liberation', meaning: 'Your inner world is vast — spiritual practices and foreign lands call to you', icon: 'sparkle' },
+                  }
+
                   let title = ''
                   let detail = ''
                   let iconType: 'star' | 'sparkle' | 'orbit' | 'compass' = 'star'
 
                   if (focusMatch) {
-                    title = focusMatch[1].trim()
+                    const rawTitle = focusMatch[1].trim()
                     const countMatch = theme.match(/\((\d+) planets? in house (\d+)\)/)
                     if (countMatch) {
-                      detail = `${countMatch[1]} planets concentrated here — a major life focus`
+                      const houseNum = countMatch[2]
+                      const houseMeaning = HOUSE_LIFE_MEANINGS[houseNum]
+                      if (houseMeaning) {
+                        title = houseMeaning.title
+                        detail = houseMeaning.meaning
+                        iconType = houseMeaning.icon
+                      } else {
+                        title = rawTitle
+                        detail = `${countMatch[1]} planets concentrated here — a powerful life focus`
+                        iconType = 'star'
+                      }
+                    } else {
+                      title = rawTitle
+                      detail = 'A significant area of focus in your chart'
+                      iconType = i === 0 ? 'star' : 'compass'
                     }
-                    iconType = i === 0 ? 'star' : i === 1 ? 'compass' : 'orbit'
                   } else if (yogaMatch) {
                     title = yogaMatch[1]
-                    detail = yogaMatch[2].split('.')[0]?.trim() || ''
+                    // Extract the meaningful part after the dash
+                    const yogaDesc = yogaMatch[2].replace(/^.*?—\s*/, '').split('.')[0]?.trim()
+                    detail = yogaDesc || yogaMatch[2].split('.')[0]?.trim() || ''
                     iconType = 'sparkle'
                   } else if (dashaMatch) {
-                    title = `${dashaMatch[1]} Dasha Period`
-                    detail = `Current focus: ${dashaMatch[2].split('(')[0]?.trim()}`
+                    const planet = dashaMatch[1]
+                    const DASHA_MEANINGS: Record<string, string> = {
+                      Sun: 'A period of confidence and authority — step into leadership',
+                      Moon: 'Emotional depth and intuition guide your decisions now',
+                      Mars: 'Action and courage define this period — take bold steps',
+                      Mercury: 'Your intellect is sharp — learning, communication, and deals flourish',
+                      Jupiter: 'Expansion and wisdom — the universe opens doors for growth',
+                      Venus: 'Love, beauty, and comfort surround you — enjoy the finer things',
+                      Saturn: 'Discipline builds lasting foundations — patience pays off big',
+                      Rahu: 'Unconventional opportunities appear — embrace the unexpected',
+                      Ketu: 'Spiritual awakening — let go of what no longer serves you',
+                    }
+                    title = `${planet} Dasha Period — Active Now`
+                    detail = DASHA_MEANINGS[planet] || `Current focus: ${dashaMatch[2].split('(')[0]?.trim()}`
                     iconType = 'orbit'
                   } else {
-                    title = theme.length > 60 ? theme.slice(0, 57) + '...' : theme
+                    title = theme.length > 50 ? theme.slice(0, 47) + '...' : theme
+                    detail = 'An important pattern in your birth chart'
                     iconType = i % 2 === 0 ? 'star' : 'compass'
                   }
 
