@@ -841,9 +841,14 @@ export default function PersonalitySnapshot() {
                     }
                   } else if (yogaMatch) {
                     title = yogaMatch[1]
-                    // Extract the meaningful part after the dash
-                    const yogaDesc = yogaMatch[2].replace(/^.*?—\s*/, '').split('.')[0]?.trim()
-                    detail = yogaDesc || yogaMatch[2].split('.')[0]?.trim() || ''
+                    // Extract all meaningful sentences after the yoga name repetition and dash
+                    const rawDesc = yogaMatch[2]
+                    // Remove the repeated yoga name: "Budhaditya Yoga — "
+                    const afterDash = rawDesc.replace(/^\w+\s+Yoga\s*[—–-]\s*/i, '').trim()
+                    // Take up to 2 sentences for a complete description
+                    const sentences = afterDash.split('.').map(s => s.trim()).filter(s => s.length > 5)
+                    detail = sentences.slice(0, 2).join('. ')
+                    if (detail && !detail.endsWith('.')) detail += '.'
                     iconType = 'sparkle'
                   } else if (dashaMatch) {
                     const planet = dashaMatch[1]
