@@ -1202,7 +1202,7 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
           {/* Timeline — all upcoming yoga events */}
           {futureYogas.timeline.length > 0 && (
             <div className="space-y-3">
-              {futureYogas.timeline.filter(e => e.start_date > new Date().toISOString().slice(0, 10)).slice(0, 6).map((y, i) => {
+              {futureYogas.timeline.filter(e => e.start_date >= transits.date).slice(0, 6).map((y, i) => {
                 const style = YOGA_CATEGORY_STYLES[y.category || 'opportunity']
                 return (
                   <div
