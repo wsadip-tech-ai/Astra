@@ -340,9 +340,13 @@ export async function POST(request: Request) {
           // DB save failed — don't break the response
         }
 
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ done: true, full_text: fullText })}\n\n`)
-        )
+        try {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ done: true, full_text: fullText })}\n\n`)
+          )
+        } catch {
+          // Controller may already be closed by client disconnect
+        }
 
         // Try to increment daily message count (may fail if column doesn't exist)
         try {
@@ -356,12 +360,16 @@ export async function POST(request: Request) {
 
       } catch (err) {
         console.error('[chat/message] Stream error:', err)
-        const errorMsg = 'Astra is meditating, please try again shortly'
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ error: errorMsg })}\n\n`)
-        )
+        try {
+          const errorMsg = 'Astra is meditating, please try again shortly'
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ error: errorMsg })}\n\n`)
+          )
+        } catch {
+          // Controller already closed
+        }
       } finally {
-        controller.close()
+        try { controller.close() } catch { /* already closed */ }
       }
     },
   })

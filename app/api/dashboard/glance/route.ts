@@ -22,7 +22,7 @@ export async function GET() {
     .maybeSingle()
 
   const vedic = chart?.vedic_chart_json as {
-    planets?: { name: string; sign: string; degree: number }[]
+    planets?: { name: string; sign: string; degree: number; house?: number }[]
     lagna?: { sign: string }
     dasha?: { current_mahadasha?: { planet: string } }
   } | null
@@ -46,6 +46,7 @@ export async function GET() {
           name: p.name,
           sign: p.sign,
           degree: p.degree,
+          house: p.house ?? 1,
         })),
         moon_sign: moonSign,
       }),
