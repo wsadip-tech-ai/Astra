@@ -781,21 +781,90 @@ export default function PersonalitySnapshot() {
             </div>
           </motion.div>
 
-          {/* ── Life Themes (compact) ────────────────────────── */}
+          {/* ── Life Themes — visual cards with icons ────────── */}
           {life_themes.length > 0 && (
             <motion.div variants={fadeUp} className="mb-6">
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-                Life Themes
+              <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                Dominant Life Themes
               </p>
-              <div className="flex flex-wrap gap-1.5">
-                {life_themes.slice(0, 5).map((theme) => (
-                  <span
-                    key={theme}
-                    className="rounded-full border border-violet/15 bg-violet/[0.08] px-3 py-1 text-[11px] font-medium text-violet-light"
-                  >
-                    {theme}
-                  </span>
-                ))}
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                {life_themes.slice(0, 4).map((theme, i) => {
+                  // Parse theme to extract readable title and detail
+                  // Themes look like: "Strong focus on partnerships and marriage (3 planets in house 7)"
+                  // or "Budhaditya Yoga: description..."
+                  // or "Current Mercury mahadasha period emphasizes..."
+                  const isYoga = /yoga/i.test(theme)
+                  const isDasha = /mahadasha|dasha/i.test(theme)
+                  const focusMatch = theme.match(/Strong focus on\s+([^(]+)/i)
+                  const yogaMatch = theme.match(/^(\w+\s+Yoga)[:\s]+(.+)/i)
+                  const dashaMatch = theme.match(/Current\s+(\w+)\s+mahadasha.*?emphasizes?\s+(.+)/i)
+
+                  let title = ''
+                  let detail = ''
+                  let iconType: 'star' | 'sparkle' | 'orbit' | 'compass' = 'star'
+
+                  if (focusMatch) {
+                    title = focusMatch[1].trim()
+                    const countMatch = theme.match(/\((\d+) planets? in house (\d+)\)/)
+                    if (countMatch) {
+                      detail = `${countMatch[1]} planets concentrated here — a major life focus`
+                    }
+                    iconType = i === 0 ? 'star' : i === 1 ? 'compass' : 'orbit'
+                  } else if (yogaMatch) {
+                    title = yogaMatch[1]
+                    detail = yogaMatch[2].split('.')[0]?.trim() || ''
+                    iconType = 'sparkle'
+                  } else if (dashaMatch) {
+                    title = `${dashaMatch[1]} Dasha Period`
+                    detail = `Current focus: ${dashaMatch[2].split('(')[0]?.trim()}`
+                    iconType = 'orbit'
+                  } else {
+                    title = theme.length > 60 ? theme.slice(0, 57) + '...' : theme
+                    iconType = i % 2 === 0 ? 'star' : 'compass'
+                  }
+
+                  const themeStyles = [
+                    { bg: 'from-violet/10 to-transparent', border: 'border-violet/15', dot: 'bg-violet', dotGlow: 'shadow-[0_0_8px_rgba(124,58,237,0.6)]' },
+                    { bg: 'from-rose/8 to-transparent', border: 'border-rose/15', dot: 'bg-rose', dotGlow: 'shadow-[0_0_8px_rgba(236,72,153,0.5)]' },
+                    { bg: 'from-blue-500/8 to-transparent', border: 'border-blue-500/15', dot: 'bg-blue-400', dotGlow: 'shadow-[0_0_8px_rgba(96,165,250,0.5)]' },
+                    { bg: 'from-amber-500/8 to-transparent', border: 'border-amber-500/15', dot: 'bg-amber-400', dotGlow: 'shadow-[0_0_8px_rgba(245,158,11,0.5)]' },
+                  ]
+                  const s = themeStyles[i] ?? themeStyles[0]
+
+                  const iconSvgs = {
+                    star: <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" /></svg>,
+                    sparkle: <SparklesIcon className="h-4 w-4" />,
+                    orbit: <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>,
+                    compass: <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></svg>,
+                  }
+
+                  return (
+                    <motion.div
+                      key={theme}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.4, delay: 0.5 + i * 0.1 }}
+                      className={`relative overflow-hidden rounded-xl border ${s.border} bg-gradient-to-br ${s.bg} p-3.5 transition-all duration-200 hover:scale-[1.01]`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${s.dot} ${s.dotGlow}`} />
+                        <div className="min-w-0">
+                          <p className="font-display text-[13px] leading-snug text-star">
+                            {title}
+                          </p>
+                          {detail && (
+                            <p className="mt-0.5 text-[11px] leading-snug text-muted">
+                              {detail}
+                            </p>
+                          )}
+                        </div>
+                        <div className="ml-auto shrink-0 text-white/15">
+                          {iconSvgs[iconType]}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )
+                })}
               </div>
             </motion.div>
           )}
