@@ -83,11 +83,11 @@ function YearlySkeleton() {
         variants={shimmer}
         className="rounded-2xl border border-white/5 bg-cosmos p-8 space-y-3"
       >
-        {Array.from({ length: 8 }).map((_, i) => (
+        {[88, 95, 78, 82, 70, 65, 73, 58].map((w, i) => (
           <div
             key={i}
             className="h-3.5 rounded-full bg-white/5"
-            style={{ width: `${85 - i * 5 + Math.random() * 10}%` }}
+            style={{ width: `${w}%` }}
           />
         ))}
       </motion.div>
