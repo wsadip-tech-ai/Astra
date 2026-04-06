@@ -187,12 +187,29 @@ def interpret_all_transits(
     else:
         overall = "Balanced period — equal supportive and challenging energies at play."
 
+    # Personalized day quality score (0-10)
+    total = len(favorable) + len(challenging)
+    if total > 0:
+        fav_ratio = len(favorable) / total
+    else:
+        fav_ratio = 0.5
+
+    if fav_ratio >= 0.7:
+        day_quality = {"score": "excellent", "label": "Excellent Day", "description": "Multiple supportive planetary alignments favor you today."}
+    elif fav_ratio >= 0.5:
+        day_quality = {"score": "good", "label": "Good Day", "description": "More supportive than challenging — a generally positive day."}
+    elif fav_ratio >= 0.3:
+        day_quality = {"score": "moderate", "label": "Mixed Day", "description": "A blend of supportive and challenging energies — stay aware and deliberate."}
+    else:
+        day_quality = {"score": "challenging", "label": "Challenging Day", "description": "More planets testing you than supporting — practice patience, follow remedies, and focus on your strengths."}
+
     return {
         "planet_interpretations": planet_interpretations,
         "life_area_summary": life_area_summary,
         "favorable_count": len(favorable),
         "challenging_count": len(challenging),
         "overall_outlook": overall,
+        "day_quality": day_quality,
     }
 
 

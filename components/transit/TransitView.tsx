@@ -120,6 +120,7 @@ export interface TransitViewProps {
     favorable_count: number
     challenging_count: number
     overall_outlook: string
+    day_quality?: { score: string; label: string; description: string }
   } | null
   dasha?: {
     current_mahadasha: { planet: string; start: string; end: string }
@@ -692,6 +693,18 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
     ? MURTHI_STYLES[personal.murthi_nirnaya] ?? MURTHI_STYLES.Iron
     : null
 
+  // Personalized day quality (overrides Murthi for the primary badge)
+  const dayQuality = interpreted?.day_quality
+  const DAY_QUALITY_STYLES: Record<string, { bg: string; label: string }> = {
+    excellent: { bg: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25', label: 'Excellent Day' },
+    good: { bg: 'bg-violet/15 text-violet-light border border-violet/25', label: 'Good Day' },
+    moderate: { bg: 'bg-yellow-400/15 text-yellow-400 border border-yellow-400/25', label: 'Mixed Day' },
+    challenging: { bg: 'bg-rose/15 text-rose border border-rose/25', label: 'Challenging Day' },
+  }
+  const dayBadge = dayQuality
+    ? DAY_QUALITY_STYLES[dayQuality.score] ?? DAY_QUALITY_STYLES.moderate
+    : null
+
   const highImpact = interpreted?.high_impact ?? null
 
   // Sort top alerts: first by days_remaining ascending, then impact_score descending
@@ -737,7 +750,7 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
       animate="show"
       className="space-y-8"
     >
-      {/* ═══ 1. Compact Header + Murthi Badge ═══ */}
+      {/* ═══ 1. Compact Header + Day Quality Badge ═══ */}
       <motion.div variants={fadeUp} className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-display text-3xl text-star mb-1">
@@ -746,7 +759,12 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
           <p className="text-muted text-sm">{dateFormatted}</p>
         </div>
         <div className="flex items-center gap-2.5 shrink-0">
-          {murthi && (
+          {dayBadge && (
+            <span className={`text-xs font-medium rounded-full px-3 py-1 ${dayBadge.bg}`}>
+              {dayBadge.label}
+            </span>
+          )}
+          {murthi && !dayBadge && (
             <span className={`text-xs font-medium rounded-full px-3 py-1 ${murthi.bg}`}>
               {murthi.label}
             </span>
@@ -770,25 +788,32 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
               transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
               className="bg-nebula/50 backdrop-blur-sm rounded-xl border border-white/5 p-4 space-y-4 order-1 md:order-1"
             >
-              {/* Murthi Nirnaya */}
-              {personal?.murthi_nirnaya && (() => {
-                const murthiMap: Record<string, { icon: string; glow: string; label: string; color: string }> = {
-                  Gold:   { icon: '\u2609', glow: 'shadow-yellow-400/30 border-yellow-500/30 bg-yellow-500/10', label: 'Excellent Day', color: 'text-yellow-400' },
-                  Silver: { icon: '\u263D', glow: 'shadow-gray-300/20 border-gray-400/25 bg-gray-400/10', label: 'Good Day', color: 'text-gray-300' },
-                  Copper: { icon: '\u2B25', glow: 'shadow-orange-400/20 border-orange-400/25 bg-orange-400/10', label: 'Moderate Day', color: 'text-orange-400' },
-                  Iron:   { icon: '\u2699', glow: 'shadow-gray-500/15 border-gray-600/25 bg-gray-600/10', label: 'Challenging Day', color: 'text-gray-500' },
+              {/* Personalized Day Quality */}
+              {(() => {
+                const qualityMap: Record<string, { icon: string; glow: string; color: string }> = {
+                  excellent: { icon: '✦', glow: 'shadow-emerald-400/30 border-emerald-500/30 bg-emerald-500/10', color: 'text-emerald-400' },
+                  good:      { icon: '✧', glow: 'shadow-violet/20 border-violet/30 bg-violet/10', color: 'text-violet-light' },
+                  moderate:  { icon: '◐', glow: 'shadow-yellow-400/20 border-yellow-400/25 bg-yellow-400/10', color: 'text-yellow-400' },
+                  challenging: { icon: '⚡', glow: 'shadow-rose/20 border-rose/25 bg-rose/10', color: 'text-rose' },
                 }
-                const m = murthiMap[personal.murthi_nirnaya] ?? murthiMap.Iron
+                const dq = dayQuality
+                  ? qualityMap[dayQuality.score] ?? qualityMap.moderate
+                  : null
+
+                if (!dq || !dayQuality) return null
                 return (
                   <div>
-                    <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-2">Day Quality</p>
-                    <div className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 shadow-lg ${m.glow}`}>
-                      <span className={`text-2xl ${m.color}`}>{m.icon}</span>
+                    <p className="text-violet-light text-[10px] font-semibold tracking-widest uppercase mb-2">Your Day</p>
+                    <div className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 shadow-lg ${dq.glow}`}>
+                      <span className={`text-2xl ${dq.color}`}>{dq.icon}</span>
                       <div>
-                        <p className={`text-sm font-semibold ${m.color}`}>{personal.murthi_nirnaya} Murthi</p>
-                        <p className="text-muted text-[11px]">{m.label}</p>
+                        <p className={`text-sm font-semibold ${dq.color}`}>{dayQuality.label}</p>
+                        <p className="text-muted text-[11px] leading-snug">{dayQuality.description}</p>
                       </div>
                     </div>
+                    {personal?.murthi_nirnaya && (
+                      <p className="text-muted text-[10px] mt-1.5">Traditional Murthi: {personal.murthi_nirnaya}</p>
+                    )}
                   </div>
                 )
               })()}
