@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json()
-  const { message, history = [] } = body
+  const { message, history = [], session_id: inputSessionId } = body
   if (!message || typeof message !== 'string') {
     return NextResponse.json({ error: 'message is required' }, { status: 400 })
   }
@@ -328,13 +328,38 @@ export async function POST(request: Request) {
           }
         }
 
+        // Create session if none provided
+        let sessionId: string | null = (inputSessionId as string) || null
+        if (!sessionId) {
+          try {
+            const title = message.length > 50 ? message.slice(0, 47) + '...' : message
+            const { data: newSession } = await supabase
+              .from('astra_chat_sessions')
+              .insert({ user_id: user.id, title })
+              .select('id')
+              .single()
+            sessionId = newSession?.id || null
+          } catch {
+            // Session creation failed — save messages without session
+          }
+        } else {
+          // Update session timestamp
+          try {
+            await supabase
+              .from('astra_chat_sessions')
+              .update({ updated_at: new Date().toISOString() })
+              .eq('id', sessionId)
+              .eq('user_id', user.id)
+          } catch {
+            // Timestamp update failed — not critical
+          }
+        }
+
         // Save messages to DB after streaming completes.
-        // NOTE: Requires the `astra_chat_messages` table in Supabase.
-        // If the table doesn't exist, this fails silently and chat still works.
         try {
           await supabase.from('astra_chat_messages').insert([
-            { user_id: user.id, role: 'user', content: message },
-            { user_id: user.id, role: 'assistant', content: fullText },
+            { user_id: user.id, role: 'user', content: message, session_id: sessionId },
+            { user_id: user.id, role: 'assistant', content: fullText, session_id: sessionId },
           ])
         } catch {
           // DB save failed — don't break the response
@@ -342,7 +367,7 @@ export async function POST(request: Request) {
 
         try {
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ done: true, full_text: fullText })}\n\n`)
+            encoder.encode(`data: ${JSON.stringify({ done: true, full_text: fullText, session_id: sessionId })}\n\n`)
           )
         } catch {
           // Controller may already be closed by client disconnect
