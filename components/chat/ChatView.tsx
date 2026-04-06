@@ -31,6 +31,7 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const promptSentRef = useRef(false)
+  const handleSendRef = useRef<(text: string) => void>(() => {})
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -39,15 +40,17 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
   }, [messages])
 
   // Read prompt from URL on client side and auto-send
+  const urlPrompt = searchParams.get('prompt')
   useEffect(() => {
-    const prompt = searchParams.get('prompt')
-    if (prompt && !promptSentRef.current && !streaming) {
+    if (urlPrompt && !promptSentRef.current) {
       promptSentRef.current = true
-      const timer = setTimeout(() => handleSend(prompt), 400)
+      // Wait for handleSend to be assigned
+      const timer = setTimeout(() => {
+        handleSendRef.current(urlPrompt)
+      }, 500)
       return () => clearTimeout(timer)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
+  }, [urlPrompt])
 
   async function loadPreviousConversations() {
     if (historyLoaded) {
@@ -74,6 +77,7 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
   }
 
   async function handleSend(text: string) {
+    if (!text.trim()) return
     // Add user message
     setMessages(prev => [...prev, { role: 'user', content: text }])
     setStreaming(true)
@@ -166,6 +170,7 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
       setStreaming(false)
     }
   }
+  handleSendRef.current = handleSend
 
   return (
     <div className="flex flex-col h-[calc(100vh-5rem)]">
