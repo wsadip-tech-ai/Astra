@@ -3,7 +3,40 @@
 -- Tables: astra_chat_messages, astra_cosmic_weather, astra_vaastu_properties, astra_yearly_forecasts
 
 -- ------------------------------------------------------------
--- 1. astra_chat_messages
+-- 1a. astra_chat_sessions
+-- Groups chat messages into named conversations per user
+-- ------------------------------------------------------------
+
+create table if not exists astra_chat_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  title text not null default 'New conversation',
+  created_at timestamptz default now() not null,
+  updated_at timestamptz default now() not null
+);
+
+create index idx_chat_sessions_user on astra_chat_sessions(user_id, updated_at desc);
+
+alter table astra_chat_sessions enable row level security;
+
+create policy "Users can read own sessions"
+  on astra_chat_sessions for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own sessions"
+  on astra_chat_sessions for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update own sessions"
+  on astra_chat_sessions for update
+  using (auth.uid() = user_id);
+
+create policy "Users can delete own sessions"
+  on astra_chat_sessions for delete
+  using (auth.uid() = user_id);
+
+-- ------------------------------------------------------------
+-- 1b. astra_chat_messages
 -- Chat persistence — messages saved after each exchange
 -- ------------------------------------------------------------
 
@@ -12,11 +45,13 @@ create table if not exists astra_chat_messages (
   user_id uuid references auth.users(id) on delete cascade not null,
   role text not null check (role in ('user', 'assistant')),
   content text not null,
+  session_id uuid references astra_chat_sessions(id) on delete cascade,
   created_at timestamptz default now() not null
 );
 
 create index idx_chat_messages_user_id on astra_chat_messages(user_id);
 create index idx_chat_messages_created_at on astra_chat_messages(user_id, created_at);
+create index idx_chat_messages_session on astra_chat_messages(session_id, created_at);
 
 alter table astra_chat_messages enable row level security;
 
