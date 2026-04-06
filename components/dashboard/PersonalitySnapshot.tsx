@@ -152,61 +152,121 @@ interface InsightResult {
   text: string
 }
 
+// Map core traits to punchy one-liners
+const TRAIT_PUNCHLINES: Record<string, string> = {
+  'dynamic': 'Born to lead — fearless, dynamic, and unstoppable',
+  'courageous': 'Born to lead — courage flows through everything you do',
+  'practical': 'Built for results — grounded, steady, and reliable as stone',
+  'intellectual': 'A brilliant mind — sharp, curious, and always two steps ahead',
+  'emotional': 'Deep feeler — your intuition is your greatest gift',
+  'diplomatic': 'The peacemaker — you bring balance wherever you go',
+  'intense': 'Magnetic and intense — you transform everything you touch',
+  'philosophical': 'A seeker of truth — wisdom is your north star',
+  'ambitious': 'Climbing to the top — discipline and ambition are your tools',
+  'innovative': 'A visionary mind — you see possibilities others miss',
+  'compassionate': 'Heart of gold — your compassion heals those around you',
+  'action-oriented': 'Born to lead — you make things happen, fast',
+  'stability-seeking': 'Your rock-solid nature makes others feel safe',
+  'socially aware': 'People person — you read the room like no one else',
+}
+
+// Map Moon sign qualities to emotional punchlines
+const EMOTIONAL_PUNCHLINES: Record<string, string> = {
+  'charm': 'Charm is your superpower — people are drawn to your warmth',
+  'diplomacy': 'You seek harmony in all things — peace follows where you go',
+  'emotional impulsiveness': 'You feel first, think later — and that passion is your fire',
+  'emotional stability': 'An emotional anchor — calm, steady, and deeply content',
+  'nurturing': 'Your heart nurtures everyone it touches — love is your language',
+  'analytical': 'Your feelings run through logic — you understand emotions, not just feel them',
+  'optimistic': 'An eternal optimist — your positivity is contagious',
+  'reserve': 'Still waters run deep — your emotions mature like fine wine',
+  'detached': 'You observe life from above — clarity comes from emotional freedom',
+  'sensitivity': 'You feel the world deeply — your empathy is extraordinary',
+}
+
+// Map career fields to punchy career statements
+const CAREER_PUNCHLINES: Record<string, string> = {
+  'business': 'Business and finance are your kingdoms',
+  'finance': 'Money moves toward you — financial mastery is in your stars',
+  'leadership': 'You were made to lead — authority comes naturally',
+  'communication': 'Words are your weapon — communication opens every door',
+  'teaching': 'A born teacher — sharing knowledge multiplies your power',
+  'healing': 'Healing hands — your purpose is to restore and nurture',
+  'arts': 'Creative genius — art and beauty flow through you',
+  'technology': 'Tech-minded innovator — the future is your playground',
+  'law': 'Justice is your calling — fairness and truth drive you',
+  'administration': 'Master organiser — systems and structures bend to your will',
+  'agriculture': 'Connected to the earth — growth is your natural talent',
+  'real estate': 'Property and land bring you wealth — build your empire',
+}
+
 function buildPunchyInsights(data: {
   personality: { core_nature: string; emotional_nature: string; outer_expression: string; strengths: string[] }
   career?: { direction: string }
 }): InsightResult[] {
   const insights: InsightResult[] = []
 
-  // 1. Core identity from lagna — extract the key trait words
-  const core = data.personality.core_nature
+  // 1. Core identity — find the best matching punchline
+  const core = data.personality.core_nature.toLowerCase()
   if (core) {
-    // Look for trait patterns: "dynamic, courageous", "practical, grounded", etc.
-    const traitMatch = core.match(/fundamentally\s+([^.]+)/i) || core.match(/native is\s+([^.]+)/i)
-    const lordMatch = core.match(/lagna lord (\w+) is placed in house (\d+)/i) || core.match(/(\w+) in .+ is ([^,]+)/i)
-
-    let text = ''
-    if (traitMatch) {
-      const traits = traitMatch[1].replace(/and /g, '').split(',').map(t => t.trim()).filter(t => t.length > 2).slice(0, 2)
-      text = `You are naturally ${traits.join(' and ')} at your core`
+    let bestPunch = ''
+    for (const [trait, punch] of Object.entries(TRAIT_PUNCHLINES)) {
+      if (core.includes(trait)) { bestPunch = punch; break }
     }
-    if (lordMatch && text) {
-      const planet = lordMatch[1]
-      text += ` — ${planet} drives your personality with force and determination`
+    if (!bestPunch) {
+      // Fallback: extract trait words and build a generic punchy line
+      const traitMatch = data.personality.core_nature.match(/fundamentally\s+([^.]+)/i)
+      if (traitMatch) {
+        const traits = traitMatch[1].replace(/and /g, '').split(',').map(t => t.trim()).filter(t => t.length > 2).slice(0, 2)
+        bestPunch = `${traits[0].charAt(0).toUpperCase() + traits[0].slice(1)} and ${traits[1] || 'powerful'} — that's your essence`
+      }
     }
-    if (text) insights.push({ icon: 'flame', label: 'Your Core', text })
+    if (bestPunch) insights.push({ icon: 'flame', label: 'Your Core', text: bestPunch })
   }
 
-  // 2. Emotional nature from Moon
-  const emotional = data.personality.emotional_nature
+  // 2. Emotional nature — find matching emotional punchline
+  const emotional = data.personality.emotional_nature.toLowerCase()
   if (emotional) {
-    const moonMatch = emotional.match(/Moon in (\w+) (?:confers|gives|creates|brings)\s+([^.]+)/i)
-    if (moonMatch) {
-      const qualities = moonMatch[2].replace(/and an? /g, '').replace(/innate /g, '').replace(/\s+/g, ' ').trim()
-      insights.push({ icon: 'scale', label: 'Your Heart', text: `Emotionally, you bring ${qualities.split(',').slice(0, 2).join(' and ').replace(/\s+/g, ' ').trim()}` })
-    } else {
-      // Fallback: extract first meaningful phrase
-      const first = emotional.split('.')[0]?.trim()
-      if (first && first.length > 20) {
-        insights.push({ icon: 'scale', label: 'Your Heart', text: first.replace(/^Moon in \w+ /i, 'Your emotional nature — ') })
+    let bestPunch = ''
+    for (const [quality, punch] of Object.entries(EMOTIONAL_PUNCHLINES)) {
+      if (emotional.includes(quality)) { bestPunch = punch; break }
+    }
+    if (!bestPunch) {
+      const moonMatch = data.personality.emotional_nature.match(/Moon in (\w+) (?:confers|gives|creates|brings)\s+([^.]+)/i)
+      if (moonMatch) {
+        const firstQuality = moonMatch[2].split(',')[0].trim()
+        bestPunch = `${firstQuality.charAt(0).toUpperCase() + firstQuality.slice(1)} — that's your emotional signature`
       }
     }
+    if (bestPunch) insights.push({ icon: 'scale', label: 'Your Heart', text: bestPunch })
   }
 
-  // 3. Career/life direction
-  const career = data.career?.direction
+  // 3. Career — find matching career punchline and add the network/gains info
+  const career = data.career?.direction || ''
   if (career) {
-    const careerMatch = career.match(/inclining the native toward\s+([^.]+)/i)
-    const lordMatch2 = career.match(/Lord of 10th in \d+th\s*[—–-]\s*([^;.]+)/i)
-
-    if (careerMatch) {
-      const fields = careerMatch[1].trim()
-      let text = `Your career thrives in ${fields}`
-      if (lordMatch2) {
-        const lordText = lordMatch2[1].trim()
-        text = `${lordText.charAt(0).toUpperCase() + lordText.slice(1)} — your career thrives in ${fields.split(',').slice(0, 2).join(' and ').trim()}`
+    let bestPunch = ''
+    const careerLower = career.toLowerCase()
+    for (const [field, punch] of Object.entries(CAREER_PUNCHLINES)) {
+      if (careerLower.includes(field)) { bestPunch = punch; break }
+    }
+    // Add gains/network info if available
+    const lordMatch = career.match(/Lord of 10th in \d+th\s*[—–-]\s*([^;.]+)/i)
+    if (lordMatch) {
+      const extra = lordMatch[1].trim()
+      if (bestPunch) {
+        bestPunch += ` — ${extra}`
+      } else {
+        bestPunch = `${extra.charAt(0).toUpperCase() + extra.slice(1)}`
       }
-      insights.push({ icon: 'book', label: 'Your Path', text })
+    }
+    if (!bestPunch) {
+      const careerMatch = career.match(/inclining the native toward\s+([^.]+)/i)
+      if (careerMatch) {
+        const fields = careerMatch[1].split(',').slice(0, 2).map(f => f.trim()).join(' and ')
+        bestPunch = `${fields.charAt(0).toUpperCase() + fields.slice(1)} — this is where you shine`
+      }
+    }
+    if (bestPunch) insights.push({ icon: 'book', label: 'Your Path', text: bestPunch })
     } else {
       const first = career.split('.')[0]?.trim()
       if (first && first.length > 20) {
