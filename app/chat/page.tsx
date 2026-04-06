@@ -4,7 +4,8 @@ import Navbar from '@/components/layout/Navbar'
 import ChatView from '@/components/chat/ChatView'
 import { mapProfile } from '@/lib/profile'
 
-export default async function ChatPage() {
+export default async function ChatPage({ searchParams }: { searchParams: Promise<{ prompt?: string }> }) {
+  const { prompt: initialPrompt } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -40,6 +41,7 @@ export default async function ChatPage() {
           messageLimit={3}
           messagesUsed={messagesUsed}
           isPremium={isPremium}
+          initialPrompt={initialPrompt}
         />
       </main>
     </>

@@ -17,9 +17,10 @@ interface ChatViewProps {
   messageLimit: number
   messagesUsed: number
   isPremium: boolean
+  initialPrompt?: string
 }
 
-export default function ChatView({ userName, messageLimit, messagesUsed, isPremium }: ChatViewProps) {
+export default function ChatView({ userName, messageLimit, messagesUsed, isPremium, initialPrompt }: ChatViewProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [streaming, setStreaming] = useState(false)
   const [limitReached, setLimitReached] = useState(false)
@@ -55,6 +56,18 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages])
+
+  // Auto-send initial prompt from URL query param (e.g., from dashboard quick prompts)
+  const [promptSent, setPromptSent] = useState(false)
+  useEffect(() => {
+    if (initialPrompt && !promptSent && !streaming) {
+      setPromptSent(true)
+      // Small delay to let history load first
+      const timer = setTimeout(() => handleSend(initialPrompt), 800)
+      return () => clearTimeout(timer)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialPrompt, promptSent, streaming])
 
   async function handleSend(text: string) {
     // Add user message
