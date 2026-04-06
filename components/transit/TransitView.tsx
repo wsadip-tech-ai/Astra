@@ -158,6 +158,73 @@ const ASPECT_LABELS: Record<string, { label: string; color: string }> = {
   sextile: { label: 'Sextile', color: 'text-sky-400' },
 }
 
+const ASPECT_MEANINGS: Record<string, { keyword: string; icon: string; color: string; bgColor: string; effect: (transit: string, natal: string) => string }> = {
+  conjunction: {
+    keyword: 'Intensification',
+    icon: '\u26A1',
+    color: 'text-violet-light',
+    bgColor: 'bg-violet/8 border-violet/15',
+    effect: (t, n) => `${t}'s energy merges with your natal ${n}, amplifying its themes in your life right now.`,
+  },
+  opposition: {
+    keyword: 'Tension & Awareness',
+    icon: '\u26A0\uFE0F',
+    color: 'text-orange-400',
+    bgColor: 'bg-orange-400/8 border-orange-400/15',
+    effect: (t, n) => `${t} opposes your natal ${n}, creating a push-pull dynamic. Balance is needed between these energies.`,
+  },
+  trine: {
+    keyword: 'Harmony & Flow',
+    icon: '\u2728',
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/8 border-emerald-500/15',
+    effect: (t, n) => `${t} harmoniously supports your natal ${n}. Opportunities flow naturally in ${n}'s domain.`,
+  },
+  square: {
+    keyword: 'Growth Through Friction',
+    icon: '\uD83D\uDD25',
+    color: 'text-rose',
+    bgColor: 'bg-rose/8 border-rose/15',
+    effect: (t, n) => `${t} challenges your natal ${n}, pushing you to grow. Take deliberate action rather than reacting.`,
+  },
+  sextile: {
+    keyword: 'Gentle Opportunity',
+    icon: '\uD83C\uDF1F',
+    color: 'text-sky-400',
+    bgColor: 'bg-sky-400/8 border-sky-400/15',
+    effect: (t, n) => `${t} gently opens doors through your natal ${n}. Small efforts yield meaningful results.`,
+  },
+}
+
+const FAST_MOVERS = new Set(['Moon'])
+
+const HOUSE_THEMES: Record<number, string> = {
+  1: 'Self & Identity',
+  2: 'Finances & Values',
+  3: 'Communication',
+  4: 'Home & Comfort',
+  5: 'Creativity & Romance',
+  6: 'Health & Routine',
+  7: 'Partnerships',
+  8: 'Transformation',
+  9: 'Spirituality & Travel',
+  10: 'Career & Status',
+  11: 'Social Circle & Gains',
+  12: 'Rest & Inner World',
+}
+
+const VEDHA_DURATION: Record<string, string> = {
+  Moon: 'a few hours',
+  Sun: '~1 month',
+  Mercury: '~3 weeks',
+  Venus: '~3 weeks',
+  Mars: '~6 weeks',
+  Jupiter: '~1 year',
+  Saturn: '~2.5 years',
+  Rahu: '~1.5 years',
+  Ketu: '~1.5 years',
+}
+
 const LIFE_AREA_ICONS: Record<string, React.ReactNode> = {
   'Finance & Career': (
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -995,138 +1062,207 @@ export default function TransitView({ transits, personal, interpreted, dasha, up
 
       <SectionDivider />
 
-      {/* ═══ 7. Full Analysis Toggle ═══ */}
+      {/* ═══ 7. Your Complete Reading ═══ */}
       {interpreted && (
-        <motion.section variants={fadeUp}>
-          <button
-            onClick={() => setDetailOpen(!detailOpen)}
-            className="group flex items-center gap-2 text-sm text-violet-light hover:text-star transition-colors cursor-pointer w-full pt-2"
-          >
-            <span className="font-display text-lg">
-              {detailOpen ? 'Hide Detailed Analysis' : 'View Detailed Planet Analysis'}
-            </span>
-            <svg
-              className={`w-4 h-4 transition-transform duration-300 ${detailOpen ? 'rotate-180' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-            </svg>
-          </button>
+        <motion.section variants={fadeUp} className="space-y-8">
+          <h2 className="font-display text-lg text-star/70 tracking-wide">Your Complete Reading</h2>
 
-          <AnimatePresence initial={false}>
-            {detailOpen && (
+          {/* ── 2-Column Layout: At a Glance + How Today Affects You ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            {/* ── Left Column: Planet at a Glance ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-1 h-5 rounded-full bg-violet-light/60" />
+                <h3 className="text-star font-display text-base">Planet at a Glance</h3>
+              </div>
               <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
-                className="overflow-hidden"
+                variants={stagger}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3"
               >
-                <div className="space-y-10 pt-6">
-                  {/* Per-planet interpretation cards */}
-                  {interpreted.planet_interpretations.length > 0 && (
-                    <div>
-                      <h3 className="text-star font-display text-base mb-3">Planet Readings</h3>
-                      <motion.div
-                        variants={stagger}
-                        initial="hidden"
-                        animate="show"
-                        className="space-y-3"
-                      >
-                        {interpreted.planet_interpretations.map((interp, i) => (
-                          <PlanetCard key={interp.planet} interp={interp} defaultOpen={i === 0} />
-                        ))}
-                      </motion.div>
-                    </div>
-                  )}
+                {interpreted.planet_interpretations.map(interp => {
+                  const glyph = PLANET_GLYPHS[interp.planet] ?? ''
+                  const isFav = interp.is_favorable
+                  const borderColor = isFav ? 'border-l-emerald-500/50' : 'border-l-rose/50'
+                  const planet = transits.planets.find(p => p.name === interp.planet)
+                  const houseTheme = HOUSE_THEMES[interp.house] ?? `House ${interp.house}`
+                  const primaryLifeArea = interp.life_areas[0] ?? houseTheme
 
-                  {/* Planet Position Grid */}
-                  <div>
-                    <h3 className="text-star font-display text-base mb-1">Planetary Positions</h3>
-                    <p className="text-muted text-xs mb-4">Current sidereal positions</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {transits.planets.map(planet => (
-                        <div
-                          key={planet.name}
-                          className="bg-cosmos border border-white/5 rounded-xl p-4 hover:border-violet/20 transition-colors"
-                        >
-                          <div className="flex items-start justify-between mb-1.5">
-                            <p className="text-star font-semibold text-sm">
-                              <span className="text-violet-light mr-1.5">{PLANET_GLYPHS[planet.name] ?? ''}</span>
-                              {planet.name}
-                            </p>
-                            {planet.retrograde && (
-                              <span className="bg-rose/20 text-rose text-[10px] rounded-full px-2 py-0.5 font-medium">
-                                Rx
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-violet-light text-xs">
-                            {planet.sign} {planet.degree.toFixed(1)}&deg;
-                          </p>
-                          <p className="text-muted text-[11px] mt-0.5">
-                            {planet.nakshatra} &middot; Pada {planet.pada}
-                          </p>
+                  return (
+                    <motion.div
+                      key={interp.planet}
+                      variants={fadeUp}
+                      className={`bg-cosmos rounded-xl p-4 border border-white/5 border-l-2 ${borderColor} hover:border-white/10 transition-colors group`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-violet-light text-lg">{glyph}</span>
+                          <span className="text-star text-sm font-semibold">{interp.planet}</span>
+                          {planet?.retrograde && (
+                            <span className="bg-amber-500/20 text-amber-400 text-[9px] rounded-full px-1.5 py-0.5 font-semibold leading-none">Rx</span>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Personal Aspects */}
-                  {personal && (
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-star font-display text-base mb-0.5">Your Personal Transits</h3>
-                        <p className="text-muted text-xs">How today&apos;s sky aspects your natal chart</p>
                       </div>
-
-                      {personal.transit_aspects.length > 0 && (
-                        <div>
-                          <h4 className="text-star text-sm font-semibold mb-3">Transit Aspects</h4>
-                          <div className="bg-cosmos border border-white/5 rounded-xl divide-y divide-white/5 overflow-hidden">
-                            {personal.transit_aspects.map((asp, i) => {
-                              const aspectInfo = ASPECT_LABELS[asp.aspect_type] ?? { label: asp.aspect_type, color: 'text-muted' }
-                              return (
-                                <div key={i} className="flex items-center gap-3 px-5 py-3.5">
-                                  <span className="text-star text-sm font-medium w-20 shrink-0">{asp.transit_planet}</span>
-                                  <span className={`text-xs font-medium ${aspectInfo.color}`}>{aspectInfo.label}</span>
-                                  <span className="text-muted text-xs">&rarr;</span>
-                                  <span className="text-star text-sm">{asp.natal_planet}</span>
-                                  <span className="text-muted text-xs ml-auto">{asp.orb.toFixed(1)}&deg; orb</span>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      {personal.vedha_flags.length > 0 && (
-                        <div>
-                          <h4 className="text-star text-sm font-semibold mb-3">Vedha Obstructions</h4>
-                          <div className="space-y-3">
-                            {personal.vedha_flags.map((v, i) => (
-                              <div key={i} className="bg-rose/10 border border-rose/20 rounded-xl px-5 py-4">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-rose text-sm font-semibold">{v.planet}</span>
-                                  <span className="text-muted text-xs">
-                                    House {v.favorable_house} obstructed by {v.obstructed_by}
-                                  </span>
-                                </div>
-                                <p className="text-muted text-xs">{v.description}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                      <p className="text-violet-light/80 text-xs mb-1.5">
+                        {interp.house}{interp.house === 1 ? 'st' : interp.house === 2 ? 'nd' : interp.house === 3 ? 'rd' : 'th'} House{' \u00B7 '}{primaryLifeArea}
+                      </p>
+                      <span className={`inline-block text-[10px] uppercase tracking-wide font-medium rounded-full px-2.5 py-0.5 mb-2 ${
+                        isFav ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose/15 text-rose'
+                      }`}>
+                        {isFav ? 'Supportive' : 'Challenging'}
+                      </span>
+                      <p className="text-muted text-xs leading-relaxed line-clamp-2">
+                        &ldquo;{interp.summary}&rdquo;
+                      </p>
+                    </motion.div>
+                  )
+                })}
               </motion.div>
+            </div>
+
+            {/* ── Right Column: How Today Affects You ── */}
+            {personal && personal.transit_aspects.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-1 h-5 rounded-full bg-violet-light/60" />
+                  <h3 className="text-star font-display text-base">How Today Affects You</h3>
+                </div>
+                <motion.div
+                  variants={stagger}
+                  initial="hidden"
+                  animate="show"
+                  className="space-y-3"
+                >
+                  {personal.transit_aspects
+                    .filter(asp => !FAST_MOVERS.has(asp.transit_planet) || asp.orb <= 2)
+                    .sort((a, b) => a.orb - b.orb)
+                    .slice(0, 6)
+                    .map((asp, i) => {
+                      const meaning = ASPECT_MEANINGS[asp.aspect_type]
+                      const fallbackLabel = ASPECT_LABELS[asp.aspect_type]
+                      const keyword = meaning?.keyword ?? fallbackLabel?.label ?? asp.aspect_type
+                      const icon = meaning?.icon ?? ''
+                      const colorClass = meaning?.color ?? fallbackLabel?.color ?? 'text-muted'
+                      const bgClass = meaning?.bgColor ?? 'bg-white/5 border-white/10'
+                      const explanation = meaning?.effect(asp.transit_planet, asp.natal_planet)
+                        ?? `${asp.transit_planet} forms a ${asp.aspect_type} to your natal ${asp.natal_planet}.`
+                      const transitGlyph = PLANET_GLYPHS[asp.transit_planet] ?? ''
+                      const natalGlyph = PLANET_GLYPHS[asp.natal_planet] ?? ''
+
+                      return (
+                        <motion.div
+                          key={i}
+                          variants={fadeUp}
+                          className={`rounded-xl border px-5 py-4 ${bgClass} hover:border-white/15 transition-colors`}
+                        >
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <span className="text-violet-light text-base">{transitGlyph}</span>
+                            <span className="text-star text-sm font-medium">{asp.transit_planet}</span>
+                            <span className="text-muted text-xs">&rarr;</span>
+                            <span className="text-violet-light text-base">{natalGlyph}</span>
+                            <span className="text-star text-sm font-medium">{asp.natal_planet}</span>
+                            <span className={`ml-auto text-xs font-medium ${colorClass} flex items-center gap-1`}>
+                              <span>{icon}</span> {keyword}
+                            </span>
+                          </div>
+                          <p className="text-muted text-sm leading-relaxed">
+                            {explanation}
+                          </p>
+                        </motion.div>
+                      )
+                    })}
+                </motion.div>
+              </div>
             )}
-          </AnimatePresence>
+          </div>
+
+          {/* ── Full-Width: Vedha Warnings ── */}
+          {personal && personal.vedha_flags.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-1 h-5 rounded-full bg-amber-400/60" />
+                <h3 className="text-star font-display text-base">Temporary Blocks to Watch</h3>
+              </div>
+              <motion.div
+                variants={stagger}
+                initial="hidden"
+                animate="show"
+                className="grid grid-cols-1 md:grid-cols-2 gap-3"
+              >
+                {personal.vedha_flags.map((v, i) => {
+                  const blockerGlyph = PLANET_GLYPHS[v.obstructed_by] ?? ''
+                  const planetGlyph = PLANET_GLYPHS[v.planet] ?? ''
+                  const houseTheme = HOUSE_THEMES[v.favorable_house] ?? `House ${v.favorable_house}`
+                  const duration = VEDHA_DURATION[v.obstructed_by] ?? 'some time'
+                  const isMoonBlock = v.obstructed_by === 'Moon'
+
+                  return (
+                    <motion.div
+                      key={i}
+                      variants={fadeUp}
+                      className="bg-amber-500/5 border border-amber-500/15 rounded-xl px-5 py-4"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-amber-400 text-base">{planetGlyph}</span>
+                        <span className="text-star text-sm font-medium">{v.planet} in {houseTheme}</span>
+                        <span className="text-amber-400/60 text-xs ml-auto">Blocked by {blockerGlyph} {v.obstructed_by}</span>
+                      </div>
+                      <p className="text-muted text-sm leading-relaxed mb-2">
+                        {v.description
+                          ? v.description
+                          : `Your ${houseTheme.toLowerCase()} gains from ${v.planet} are partially blocked right now. ${v.obstructed_by}'s position creates a temporary interference.`}
+                      </p>
+                      <p className={`text-xs ${isMoonBlock ? 'text-emerald-400/80' : 'text-amber-400/80'}`}>
+                        {isMoonBlock
+                          ? `This clears quickly as the Moon moves on (within ${duration}).`
+                          : `This influence lasts approximately ${duration}. Plan accordingly.`}
+                      </p>
+                    </motion.div>
+                  )
+                })}
+              </motion.div>
+            </div>
+          )}
+
+          {/* ── Detailed Planet Readings (expandable) ── */}
+          {interpreted.planet_interpretations.length > 0 && (
+            <div>
+              <button
+                onClick={() => setDetailOpen(!detailOpen)}
+                className="group flex items-center gap-2 text-sm text-violet-light hover:text-star transition-colors cursor-pointer w-full"
+              >
+                <span className="font-display text-base">
+                  {detailOpen ? 'Hide Detailed Planet Readings' : 'Read Full Planet Interpretations'}
+                </span>
+                <ChevronIcon open={detailOpen} />
+              </button>
+
+              <AnimatePresence initial={false}>
+                {detailOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.4, ease: 'easeOut' }}
+                    className="overflow-hidden"
+                  >
+                    <motion.div
+                      variants={stagger}
+                      initial="hidden"
+                      animate="show"
+                      className="space-y-3 pt-4"
+                    >
+                      {interpreted.planet_interpretations.map((interp, i) => (
+                        <PlanetCard key={interp.planet} interp={interp} defaultOpen={i === 0} />
+                      ))}
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </motion.section>
       )}
 
