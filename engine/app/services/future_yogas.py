@@ -138,36 +138,354 @@ def _gaja_kesari_description(jupiter_sign: str, house: int, moon_sign: str) -> s
     return house_meanings.get(house, f"Jupiter in Kendra from your Moon — activates Gaja Kesari Yoga.")
 
 
+def _scan_planet_sign_windows(
+    planet_id: int,
+    target_signs: set[str],
+    start: date,
+    end: date,
+    step_days: int = 7,
+) -> list[tuple[date, date, str]]:
+    """Scan for windows when a planet is in any of the target signs.
+
+    Returns list of (window_start, window_end, sign) tuples.
+    Uses weekly steps with daily refinement at boundaries.
+    """
+    windows: list[tuple[date, date, str]] = []
+    current = start
+    in_target = False
+    window_start: date | None = None
+    current_sign: str | None = None
+
+    while current <= end:
+        sign, _ = _get_planet_sign_on_date(planet_id, current)
+        is_target = sign in target_signs
+
+        if is_target and not in_target:
+            # Entering target — refine start
+            refined_start = current - timedelta(days=step_days - 1)
+            if refined_start < start:
+                refined_start = start
+            found = False
+            for d in range(step_days):
+                check = refined_start + timedelta(days=d)
+                s, _ = _get_planet_sign_on_date(planet_id, check)
+                if s in target_signs:
+                    window_start = check
+                    current_sign = s
+                    found = True
+                    break
+            if not found:
+                window_start = current
+                current_sign = sign
+            in_target = True
+
+        elif not is_target and in_target:
+            # Exiting target — refine end
+            refined_end = current - timedelta(days=step_days - 1)
+            window_end = current - timedelta(days=1)
+            for d in range(step_days):
+                check = refined_end + timedelta(days=d)
+                s, _ = _get_planet_sign_on_date(planet_id, check)
+                if s not in target_signs:
+                    window_end = check - timedelta(days=1)
+                    break
+            windows.append((window_start or current, window_end, current_sign or ""))
+            in_target = False
+            window_start = None
+
+        elif is_target and in_target and sign != current_sign:
+            # Still in target set but sign changed (e.g. moved from 12th-from-Moon to Moon sign)
+            # Close old window, open new one
+            windows.append((window_start or current, current - timedelta(days=1), current_sign or ""))
+            window_start = current
+            current_sign = sign
+
+        current += timedelta(days=step_days)
+
+    if in_target and window_start:
+        windows.append((window_start, end, current_sign or ""))
+
+    return windows
+
+
+# ─── Sade Sati ──────────────────────────────────────────────────────────────────
+
+def predict_sade_sati(
+    natal_moon_sign: str,
+    from_date: str | None = None,
+    years_ahead: int = 10,
+) -> dict:
+    """Predict Sade Sati periods — Saturn transiting 12th, 1st, and 2nd from natal Moon.
+
+    Each phase lasts ~2.5 years; total ~7.5 years.
+    """
+    start = date.fromisoformat(from_date) if from_date else date.today()
+    end = start + timedelta(days=years_ahead * 365)
+
+    moon_idx = SANSKRIT_SIGNS.index(natal_moon_sign)
+    rising_sign = SANSKRIT_SIGNS[(moon_idx - 1) % 12]  # 12th from Moon
+    peak_sign = SANSKRIT_SIGNS[moon_idx]                # 1st (Moon sign itself)
+    setting_sign = SANSKRIT_SIGNS[(moon_idx + 1) % 12]  # 2nd from Moon
+
+    phase_map = {
+        rising_sign: "rising",
+        peak_sign: "peak",
+        setting_sign: "setting",
+    }
+    target_signs = set(phase_map.keys())
+
+    windows = _scan_planet_sign_windows(swe.SATURN, target_signs, start, end, step_days=14)
+
+    # Build phase details
+    phase_details: dict[str, dict] = {}
+    descriptions = {
+        "rising": "Saturn approaches your Moon — subtle changes begin",
+        "peak": "Saturn on your Moon — deepest transformation",
+        "setting": "Saturn moves past — lessons integrate",
+    }
+
+    for w_start, w_end, sign in windows:
+        phase = phase_map.get(sign, "unknown")
+        if phase not in phase_details:
+            phase_details[phase] = {
+                "sign": sign,
+                "start": w_start.isoformat(),
+                "end": w_end.isoformat(),
+                "description": descriptions.get(phase, "Saturn transiting near your Moon"),
+            }
+        else:
+            # Extend existing phase if Saturn retrogrades back
+            existing = phase_details[phase]
+            if w_start.isoformat() < existing["start"]:
+                existing["start"] = w_start.isoformat()
+            if w_end.isoformat() > existing["end"]:
+                existing["end"] = w_end.isoformat()
+
+    # Determine if currently active
+    today_str = (from_date or date.today().isoformat())
+    currently_active = False
+    current_phase = None
+    for phase_name, details in phase_details.items():
+        if details["start"] <= today_str <= details["end"]:
+            currently_active = True
+            current_phase = phase_name
+            break
+
+    # Determine next Sade Sati if not active
+    next_sade_sati = None
+    if not currently_active and phase_details:
+        future_phases = [(n, d) for n, d in phase_details.items() if d["start"] > today_str]
+        if future_phases:
+            future_phases.sort(key=lambda x: x[1]["start"])
+            first_phase_start = future_phases[0][1]["start"]
+            last_phase_end = max(d["end"] for _, d in phase_details.items() if d["start"] >= first_phase_start)
+            next_sade_sati = {"start": first_phase_start, "end": last_phase_end}
+
+    return {
+        "currently_active": currently_active,
+        "current_phase": current_phase,
+        "phase_details": phase_details,
+        "next_sade_sati": next_sade_sati,
+        "description": (
+            f"Sade Sati is active — you are in the {current_phase} phase."
+            if currently_active
+            else "Sade Sati is not currently active for your Moon sign."
+        ),
+        "remedies": {
+            "mantra": "Om Shanaischaraya Namah",
+            "practice": "Serve elders, practice patience, maintain discipline",
+            "charity": "Donate black items on Saturdays",
+        },
+    }
+
+
+# ─── Jupiter Return ─────────────────────────────────────────────────────────────
+
+def predict_jupiter_return(
+    natal_jupiter_sign: str,
+    from_date: str | None = None,
+    years_ahead: int = 15,
+) -> list[dict]:
+    """Predict periods when transiting Jupiter returns to its natal sign (~12 year cycle)."""
+    start = date.fromisoformat(from_date) if from_date else date.today()
+    end = start + timedelta(days=years_ahead * 365)
+
+    target_signs = {natal_jupiter_sign}
+    windows = _scan_planet_sign_windows(swe.JUPITER, target_signs, start, end, step_days=7)
+
+    results = []
+    for w_start, w_end, sign in windows:
+        results.append({
+            "start_date": w_start.isoformat(),
+            "end_date": w_end.isoformat(),
+            "sign": sign,
+            "description": f"Jupiter returns to {sign} — a period of expansion, growth, and renewed purpose in the themes of your natal Jupiter.",
+            "strength": "strong",
+        })
+    return results
+
+
+# ─── Saturn Return ───────────────────────────────────────────────────────────────
+
+def predict_saturn_return(
+    natal_saturn_sign: str,
+    from_date: str | None = None,
+    years_ahead: int = 30,
+) -> list[dict]:
+    """Predict periods when transiting Saturn returns to its natal sign (~29 year cycle)."""
+    start = date.fromisoformat(from_date) if from_date else date.today()
+    end = start + timedelta(days=years_ahead * 365)
+
+    target_signs = {natal_saturn_sign}
+    windows = _scan_planet_sign_windows(swe.SATURN, target_signs, start, end, step_days=14)
+
+    results = []
+    for w_start, w_end, sign in windows:
+        results.append({
+            "start_date": w_start.isoformat(),
+            "end_date": w_end.isoformat(),
+            "sign": sign,
+            "description": f"Saturn returns to {sign} — a major maturity milestone. Restructuring of responsibilities, career, and life direction.",
+            "strength": "strong",
+        })
+    return results
+
+
+# ─── Rahu-Ketu Transit over Moon ────────────────────────────────────────────────
+
+def predict_rahu_ketu_moon_transit(
+    natal_moon_sign: str,
+    from_date: str | None = None,
+    years_ahead: int = 5,
+) -> list[dict]:
+    """Predict when Rahu or Ketu transits over the natal Moon sign.
+
+    Rahu = Mean Node. Ketu is always exactly opposite (6 signs away).
+    """
+    start = date.fromisoformat(from_date) if from_date else date.today()
+    end = start + timedelta(days=years_ahead * 365)
+
+    moon_idx = SANSKRIT_SIGNS.index(natal_moon_sign)
+    ketu_equivalent_sign = SANSKRIT_SIGNS[(moon_idx + 6) % 12]  # Ketu on Moon = Rahu opposite
+
+    results = []
+
+    # Scan Rahu (Mean Node) for Rahu-over-Moon
+    rahu_windows = _scan_planet_sign_windows(swe.MEAN_NODE, {natal_moon_sign}, start, end, step_days=7)
+    for w_start, w_end, sign in rahu_windows:
+        results.append({
+            "yoga": "Rahu over Moon",
+            "start_date": w_start.isoformat(),
+            "end_date": w_end.isoformat(),
+            "sign": sign,
+            "description": f"Rahu transits your Moon sign ({sign}) — heightened emotions, obsessive thinking, and karmic intensity. Practice grounding.",
+            "strength": "strong",
+        })
+
+    # Ketu over Moon = Rahu in opposite sign
+    ketu_windows = _scan_planet_sign_windows(swe.MEAN_NODE, {ketu_equivalent_sign}, start, end, step_days=7)
+    for w_start, w_end, _ in ketu_windows:
+        results.append({
+            "yoga": "Ketu over Moon",
+            "start_date": w_start.isoformat(),
+            "end_date": w_end.isoformat(),
+            "sign": natal_moon_sign,
+            "description": f"Ketu transits your Moon sign ({natal_moon_sign}) — spiritual detachment, past-life themes surface. Embrace inner work.",
+            "strength": "strong",
+        })
+
+    results.sort(key=lambda r: r["start_date"])
+    return results
+
+
+# ─── Combined Prediction ─────────────────────────────────────────────────────────
+
 def predict_upcoming_yogas(
     natal_moon_sign: str,
     natal_planets: list[dict] | None = None,
     from_date: str | None = None,
-    years_ahead: int = 3,
+    years_ahead: int = 5,
 ) -> dict:
     """Predict all upcoming yoga windows.
 
-    Currently predicts: Gaja Kesari (Jupiter-Moon Kendra).
-    Future: can add more transit-activated yogas.
+    Predicts: Gaja Kesari, Sade Sati, Jupiter Return, Saturn Return, Rahu-Ketu Moon.
     """
-    gaja_kesari = predict_gaja_kesari_windows(natal_moon_sign, from_date, years_ahead)
+    gaja_kesari = predict_gaja_kesari_windows(natal_moon_sign, from_date, min(years_ahead, 5))
+    sade_sati = predict_sade_sati(natal_moon_sign, from_date, min(years_ahead, 10))
 
-    # Determine if any yoga is currently active
-    today = date.today().isoformat()
+    jupiter_return: list[dict] = []
+    saturn_return: list[dict] = []
 
-    currently_active = []
-    upcoming = []
+    if natal_planets:
+        jup = next((p for p in natal_planets if p["name"] == "Jupiter"), None)
+        sat = next((p for p in natal_planets if p["name"] == "Saturn"), None)
+        if jup:
+            jupiter_return = predict_jupiter_return(jup["sign"], from_date, min(years_ahead, 15))
+        if sat:
+            saturn_return = predict_saturn_return(sat["sign"], from_date, min(years_ahead, 30))
 
-    for window in gaja_kesari:
-        if window["start_date"] <= today <= window["end_date"]:
-            currently_active.append(window)
-        elif window["start_date"] > today:
-            upcoming.append(window)
+    rahu_ketu_moon = predict_rahu_ketu_moon_transit(natal_moon_sign, from_date, min(years_ahead, 5))
 
-    # Sort upcoming by start date
-    upcoming.sort(key=lambda w: w["start_date"])
+    # Build combined timeline
+    ref_date = from_date or date.today().isoformat()
+    all_events: list[dict] = []
+
+    # Gaja Kesari windows
+    for w in gaja_kesari:
+        if w.get("start_date", "") >= ref_date:
+            all_events.append({**w, "category": "opportunity"})
+
+    # Sade Sati
+    if sade_sati["currently_active"]:
+        phase = sade_sati["current_phase"]
+        details = sade_sati["phase_details"].get(phase, {})
+        all_events.append({
+            "yoga": "Sade Sati",
+            "start_date": details.get("start", ""),
+            "end_date": details.get("end", ""),
+            "description": details.get("description", "Saturn transiting near your Moon"),
+            "strength": "strong" if phase == "peak" else "moderate",
+            "category": "transformation",
+            "phase": phase,
+        })
+    elif sade_sati.get("next_sade_sati"):
+        ns = sade_sati["next_sade_sati"]
+        all_events.append({
+            "yoga": "Sade Sati (upcoming)",
+            "start_date": ns["start"],
+            "end_date": ns["end"],
+            "description": "Saturn will begin transiting near your Moon — a period of karmic restructuring",
+            "strength": "strong",
+            "category": "transformation",
+        })
+
+    # Jupiter Return
+    for w in jupiter_return:
+        all_events.append({**w, "yoga": "Jupiter Return", "category": "opportunity"})
+
+    # Saturn Return
+    for w in saturn_return:
+        all_events.append({**w, "yoga": "Saturn Return", "category": "transformation"})
+
+    # Rahu-Ketu over Moon
+    for w in rahu_ketu_moon:
+        all_events.append({**w, "category": "karmic"})
+
+    all_events.sort(key=lambda e: e.get("start_date", "9999"))
+
+    # Determine what's active right now
+    currently_active = [
+        e for e in all_events
+        if e.get("start_date", "9999") <= ref_date <= e.get("end_date", "0000")
+    ]
 
     return {
+        "gaja_kesari": gaja_kesari,
+        "sade_sati": sade_sati,
+        "jupiter_return": jupiter_return,
+        "saturn_return": saturn_return,
+        "rahu_ketu_moon": rahu_ketu_moon,
+        "timeline": all_events,
+        "next_gaja_kesari": gaja_kesari[0] if gaja_kesari else None,
         "currently_active": currently_active,
-        "upcoming": upcoming,
-        "next_gaja_kesari": upcoming[0] if upcoming else (currently_active[0] if currently_active else None),
     }

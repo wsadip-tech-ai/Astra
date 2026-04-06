@@ -33,8 +33,9 @@ async def predict_yogas(request: dict):
 
         result = predict_upcoming_yogas(
             natal_moon_sign=natal_moon_sign,
+            natal_planets=request.get("natal_planets"),
             from_date=request.get("from_date"),
-            years_ahead=request.get("years_ahead", 3),
+            years_ahead=request.get("years_ahead", 5),
         )
         return result
     except Exception as e:
