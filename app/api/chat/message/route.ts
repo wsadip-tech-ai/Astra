@@ -216,7 +216,7 @@ export async function POST(request: Request) {
         const openai = createAI()
         const openaiStream = await openai.chat.completions.create({
           model: getModel(),
-          max_tokens: 1024,
+          max_tokens: 256,
           stream: true,
           messages: [
             { role: 'system', content: systemPrompt },
