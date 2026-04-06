@@ -159,6 +159,45 @@ export async function POST(request: Request) {
     }
   }
 
+  // Fetch future yoga predictions
+  let futureYogaContext = ''
+  if (vedicChart) {
+    try {
+      const moonPlanets = (chart.vedic_chart_json as { planets?: { name: string; sign: string }[] })?.planets ?? []
+      const moonPlanet = moonPlanets.find(p => p.name === 'Moon')
+      if (moonPlanet) {
+        const yogaResp = await fetch(`${FASTAPI_BASE_URL}/yogas/predict`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Internal-Secret': INTERNAL_SECRET },
+          body: JSON.stringify({ natal_moon_sign: moonPlanet.sign, years_ahead: 3 }),
+          signal: AbortSignal.timeout(5000),
+        })
+        if (yogaResp.ok) {
+          const yogas = await yogaResp.json()
+          if (yogas.currently_active?.length > 0) {
+            futureYogaContext += '\n\n## CURRENTLY ACTIVE YOGA\n'
+            for (const y of yogas.currently_active) {
+              futureYogaContext += `${y.yoga} is ACTIVE NOW (${y.start_date} to ${y.end_date}). Jupiter in ${y.jupiter_sign} (${y.kendra_house}th from Moon). ${y.description}\n`
+            }
+          }
+          if (yogas.next_gaja_kesari) {
+            const next = yogas.next_gaja_kesari
+            futureYogaContext += `\n## NEXT GAJA KESARI YOGA\n`
+            futureYogaContext += `Starts: ${next.start_date}, Jupiter enters ${next.jupiter_sign} (${next.kendra_house}th from Moon). Strength: ${next.strength}. ${next.description}\n`
+          }
+          if (yogas.upcoming?.length > 1) {
+            futureYogaContext += `\nAll upcoming Gaja Kesari windows (next 3 years):\n`
+            for (const y of yogas.upcoming) {
+              futureYogaContext += `- ${y.start_date} to ${y.end_date}: Jupiter in ${y.jupiter_sign} (${y.kendra_house}th house)\n`
+            }
+          }
+        }
+      }
+    } catch {
+      // Future yoga prediction failed — skip
+    }
+  }
+
   // Fetch Vaastu property if saved
   let vaastuProfile = null
   try {
@@ -197,6 +236,11 @@ export async function POST(request: Request) {
   // Append personal transit interpretations (life areas, alerts, timing, house positions)
   if (personalTransitContext) {
     systemPrompt += personalTransitContext
+  }
+
+  // Append future yoga predictions (Gaja Kesari windows from Swiss Ephemeris)
+  if (futureYogaContext) {
+    systemPrompt += futureYogaContext
   }
 
   // Use history from client (no DB session for now)
