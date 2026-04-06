@@ -29,9 +29,8 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
   const [showHistory, setShowHistory] = useState(false)
   const [history, setHistory] = useState<Message[]>([])
   const [historyLoaded, setHistoryLoaded] = useState(false)
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const promptSentRef = useRef(false)
-  const handleSendRef = useRef<(text: string) => void>(() => {})
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -39,18 +38,13 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
     }
   }, [messages])
 
-  // Read prompt from URL on client side and auto-send
-  const urlPrompt = searchParams.get('prompt')
+  // Read prompt from URL on mount
   useEffect(() => {
-    if (urlPrompt && !promptSentRef.current) {
-      promptSentRef.current = true
-      // Wait for handleSend to be assigned
-      const timer = setTimeout(() => {
-        handleSendRef.current(urlPrompt)
-      }, 500)
-      return () => clearTimeout(timer)
+    const prompt = searchParams.get('prompt')
+    if (prompt) {
+      setPendingPrompt(prompt)
     }
-  }, [urlPrompt])
+  }, [searchParams])
 
   async function loadPreviousConversations() {
     if (historyLoaded) {
@@ -75,6 +69,68 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
     setHistoryLoaded(true)
     setShowHistory(true)
   }
+
+  // Process pending prompt (from URL ?prompt=...)
+  useEffect(() => {
+    if (pendingPrompt && !streaming) {
+      const text = pendingPrompt
+      setPendingPrompt(null)
+      // Directly execute the send logic
+      setMessages(prev => [...prev, { role: 'user', content: text }])
+      setStreaming(true)
+      // Fire the API call
+      fetch('/api/chat/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, history: [] }),
+      }).then(async (resp) => {
+        if (!resp.ok || !resp.body) {
+          setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I could not process that request. Please try again.' }])
+          setStreaming(false)
+          return
+        }
+        const reader = resp.body.getReader()
+        const decoder = new TextDecoder()
+        let fullText = ''
+        setMessages(prev => [...prev, { role: 'assistant', content: '' }])
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          const chunk = decoder.decode(value)
+          const lines = chunk.split('\n').filter(l => l.startsWith('data: '))
+          for (const line of lines) {
+            try {
+              const json = JSON.parse(line.slice(6))
+              if (json.text) {
+                fullText += json.text
+                setMessages(prev => {
+                  const updated = [...prev]
+                  updated[updated.length - 1] = { role: 'assistant', content: fullText }
+                  return updated
+                })
+              }
+              if (json.done) {
+                setStreaming(false)
+              }
+              if (json.error) {
+                setMessages(prev => {
+                  const updated = [...prev]
+                  updated[updated.length - 1] = { role: 'assistant', content: json.error }
+                  return updated
+                })
+                setStreaming(false)
+              }
+            } catch { /* skip malformed lines */ }
+          }
+        }
+        setStreaming(false)
+      }).catch(() => {
+        setMessages(prev => [...prev, { role: 'assistant', content: 'Connection error. Please try again.' }])
+        setStreaming(false)
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingPrompt])
 
   async function handleSend(text: string) {
     if (!text.trim()) return
@@ -170,8 +226,6 @@ export default function ChatView({ userName, messageLimit, messagesUsed, isPremi
       setStreaming(false)
     }
   }
-  handleSendRef.current = handleSend
-
   return (
     <div className="flex flex-col h-[calc(100vh-5rem)]">
       {/* Chat header */}
