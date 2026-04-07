@@ -5,6 +5,8 @@ import { generateHoroscope } from '@/lib/horoscope'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import GlowButton from '@/components/ui/GlowButton'
+import ExpandableReading from '@/components/horoscope/ExpandableReading'
+import MoonMoodBanner from '@/components/horoscope/MoonMoodBanner'
 import type { Metadata } from 'next'
 
 export const revalidate = 86400
@@ -112,15 +114,9 @@ export default async function HoroscopePage({ params }: Props) {
             <p className="text-muted text-xs">{zodiacSign.element} · Ruled by {zodiacSign.rulingPlanet}</p>
           </div>
 
-          <div className="bg-cosmos border border-violet/20 rounded-2xl p-8 mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-violet-light text-xs font-semibold tracking-widest uppercase">Today's Reading</span>
-              <span className="text-muted text-xs">· {todayFormatted}</span>
-            </div>
-            <p className="text-star text-lg leading-relaxed font-display italic">
-              "{reading}"
-            </p>
-          </div>
+          <MoonMoodBanner />
+
+          <ExpandableReading reading={reading} dateFormatted={todayFormatted} />
 
           {/* Lucky details */}
           {luckyNumber && (
