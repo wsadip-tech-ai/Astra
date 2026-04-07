@@ -5,6 +5,7 @@ import GlowButton from '@/components/ui/GlowButton'
 import CosmicProfile from '@/components/dashboard/CosmicProfile'
 import DayAtGlance from '@/components/dashboard/DayAtGlance'
 import UpcomingEvents from '@/components/dashboard/UpcomingEvents'
+import MoonBrief from '@/components/dashboard/MoonBrief'
 import QuickPrompts from '@/components/dashboard/QuickPrompts'
 import PersonalitySnapshot from '@/components/dashboard/PersonalitySnapshot'
 import Link from 'next/link'
@@ -83,6 +84,9 @@ export default async function DashboardPage() {
 
           {/* ── 3. Coming Up — yoga countdown cards ───────────────────── */}
           {hasVedicChart && <UpcomingEvents />}
+
+          {/* ── 3b. Moon Brief — daily mood, mantra, remedy ────────────── */}
+          {hasVedicChart && <MoonBrief />}
 
           {/* ── 4. Ask Astra — quick prompt chips ─────────────────────── */}
           {chart && <QuickPrompts />}
