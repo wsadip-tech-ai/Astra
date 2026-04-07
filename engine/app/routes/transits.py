@@ -6,6 +6,7 @@ from app.models.schemas import (
 )
 from app.services.transits import calculate_transits, calculate_personal_transits
 from app.services.transit_interpretations import interpret_all_transits, get_high_impact_summary
+from app.services.moon_brief import get_moon_brief
 
 router = APIRouter()
 
@@ -19,6 +20,25 @@ async def transits_today():
     try:
         result = calculate_transits(date.today().isoformat())
         return result
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": "calculation_failed", "detail": str(e)},
+        )
+
+
+@router.get(
+    "/transits/moon-brief",
+    responses={500: {"model": ErrorResponse}},
+)
+async def moon_brief():
+    try:
+        today = date.today()
+        transits = calculate_transits(today.isoformat())
+        moon = next(p for p in transits["planets"] if p["name"] == "Moon")
+        day_name = today.strftime("%A")
+        brief = get_moon_brief(moon["sign"], moon["nakshatra"], day_name)
+        return brief
     except Exception as e:
         return JSONResponse(
             status_code=500,
