@@ -3,8 +3,8 @@ import { test, expect, type Page } from '@playwright/test'
 const BASE = 'http://localhost:3003'
 const SUPABASE_URL = 'https://wckuawushetknwpyswqm.supabase.co'
 const SUPABASE_ANON_KEY = 'sb_publishable_W2l5mB89I5VX2lrouvYB5g_-TJygBIn'
-const EMAIL = 'wsadip@gmail.com'
-const PASSWORD = 'test1234'
+const EMAIL = 'test@astra.com'
+const PASSWORD = 'TestPass123'
 
 // Helper: log in via UI form — the only reliable way with Supabase SSR cookies
 async function login(page: Page) {
