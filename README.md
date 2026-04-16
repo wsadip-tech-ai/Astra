@@ -128,7 +128,7 @@ uvicorn app.main:app --reload  # http://localhost:8000
 
 ## About
 
-Built by **Sadip Wagle** — Co-Founder of Datambit (London), AI Solutions Architect with production experience for the **UK Home Office, Royal Navy, Mastercard, and Nationwide**. Currently building indigenous AI products for Nepal and global markets.
+Built by **Sadip Wagle** — AI Solutions Architect, formerly Co-Founder of **Datambit (London, 2023–2025)** with production AI experience for the **UK Home Office, Royal Navy, Mastercard,** and **Nationwide**. Currently based in Kathmandu, building indigenous AI products for Nepal and global markets.
 
 - **LinkedIn:** [sadip-wagle](https://www.linkedin.com/in/sadip-wagle-711245b7/)
 - **GitHub:** [@wsadip-tech-ai](https://github.com/wsadip-tech-ai)
