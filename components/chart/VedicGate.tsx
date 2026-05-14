@@ -2,14 +2,17 @@
 
 import GlowButton from '@/components/ui/GlowButton'
 import KundaliChart from '@/components/chart/KundaliChart'
+import PersonalityDetail from '@/components/chart/PersonalityDetail'
+import type { PersonalityData } from '@/components/chart/PersonalityDetail'
 import type { VedicChartData } from '@/types'
 
 interface VedicGateProps {
   tier: 'free' | 'premium'
   vedicChart: VedicChartData | null
+  personalityData?: PersonalityData | null
 }
 
-export default function VedicGate({ tier, vedicChart }: VedicGateProps) {
+export default function VedicGate({ tier, vedicChart, personalityData }: VedicGateProps) {
   if (tier !== 'premium') {
     return (
       <div className="bg-gradient-to-br from-nebula to-cosmos border border-violet/20 rounded-2xl p-8 text-center max-w-md mx-auto">
@@ -99,6 +102,9 @@ export default function VedicGate({ tier, vedicChart }: VedicGateProps) {
           </div>
         </div>
       )}
+
+      {/* Personality & Life Analysis */}
+      {personalityData && <PersonalityDetail data={personalityData} />}
     </div>
   )
 }

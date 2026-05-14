@@ -5,18 +5,20 @@ import type { WesternChartData, VedicChartData } from '@/types'
 import PlanetCard from '@/components/chart/PlanetCard'
 import AspectRow from '@/components/chart/AspectRow'
 import VedicGate from '@/components/chart/VedicGate'
+import type { PersonalityData } from '@/components/chart/PersonalityDetail'
 
 interface ChartTabsProps {
   chart: WesternChartData
   vedicChart: VedicChartData | null
   summaryText: string
   tier: 'free' | 'premium'
+  personalityData?: PersonalityData | null
 }
 
 const TABS = ['Overview', 'Planets', 'Aspects', 'Vedic'] as const
 type Tab = typeof TABS[number]
 
-export default function ChartTabs({ chart, vedicChart, summaryText, tier }: ChartTabsProps) {
+export default function ChartTabs({ chart, vedicChart, summaryText, tier, personalityData }: ChartTabsProps) {
   const [activeTab, setActiveTab] = useState<Tab>('Overview')
 
   const sun = chart.planets.find(p => p.name === 'Sun')
@@ -84,7 +86,7 @@ export default function ChartTabs({ chart, vedicChart, summaryText, tier }: Char
         </div>
       )}
 
-      {activeTab === 'Vedic' && <VedicGate tier={tier} vedicChart={vedicChart} />}
+      {activeTab === 'Vedic' && <VedicGate tier={tier} vedicChart={vedicChart} personalityData={personalityData} />}
     </div>
   )
 }

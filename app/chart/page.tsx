@@ -46,6 +46,26 @@ export default async function ChartPage() {
   const vedicData = chart.vedic_chart_json as VedicChartData | null
   const tier = profile?.subscription_tier ?? 'free'
 
+  // Fetch personality analysis from engine (server-side)
+  let personalityData = null
+  if (vedicData) {
+    try {
+      const baseUrl = process.env.FASTAPI_BASE_URL || 'http://localhost:8000'
+      const secret = process.env.INTERNAL_SECRET || ''
+      const resp = await fetch(`${baseUrl}/chart/personality`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Internal-Secret': secret,
+        },
+        body: JSON.stringify(vedicData),
+      })
+      if (resp.ok) personalityData = await resp.json()
+    } catch {
+      /* Engine unavailable — personality section will be absent */
+    }
+  }
+
   if (!chartData) {
     return (
       <>
@@ -84,6 +104,7 @@ export default async function ChartPage() {
             vedicChart={vedicData}
             summaryText={summaryText}
             tier={tier as 'free' | 'premium'}
+            personalityData={personalityData}
           />
         </div>
       </main>
