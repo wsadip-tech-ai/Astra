@@ -6,7 +6,7 @@
 ![Status](https://img.shields.io/badge/status-MVP--testing-yellow)
 ![Stack](https://img.shields.io/badge/stack-Next.js%20%2B%20FastAPI%20%2B%20Supabase-blue)
 ![LLM](https://img.shields.io/badge/LLM-GPT--4o--mini-purple)
-![Tests](https://img.shields.io/badge/tests-Playwright%20E2E-success)
+![Tests](https://img.shields.io/badge/tests-~307%20passing-success)
 
 ---
 
@@ -20,7 +20,7 @@ The thesis: AI doesn't replace the astrologer's interpretive craft — it makes 
 
 ```mermaid
 flowchart LR
-    subgraph Client[Next.js 15 - App Router]
+    subgraph Client[Next.js 16 - App Router]
         UI[React Components<br/>Charts, Cards, Chat]
         MW[Middleware<br/>Auth + Routing]
     end
@@ -68,7 +68,7 @@ flowchart LR
 | Streaming | **Server-Sent Events** | Reliable across networks; no socket overhead; controller close is guarded against double-close errors |
 | Auth | **Supabase Auth + middleware** | Centralised route protection in `middleware.ts`; role and subscription state checked on every request |
 | Payments | **Stripe** with monthly + yearly price tiers | Standard subscription model with webhook-driven state |
-| Testing | **Playwright E2E (45 tests)** | 33 smoke + 12 authenticated; catches rendering regressions; smoke runs without auth, deeper suite logs in |
+| Testing | **~307 automated tests** | 214 engine pytest cases (deterministic chart math) + 93 TS/Playwright cases; smoke suite runs without auth, deeper E2E logs in |
 
 ## Key features
 
@@ -82,15 +82,15 @@ flowchart LR
 
 ## Status
 
-- **211+ commits** across feature work
-- **45 E2E tests passing** (33 smoke + 12 authenticated)
-- **18 routes** wired and rendering
+- **222 commits** across feature work
+- **~307 automated tests passing** — 214 engine pytest cases + 93 TS/Playwright cases
+- **14 app routes + 29 API routes** wired and rendering
 - All sub-projects (1–4) built; currently in testing phase
 - Open work: deployment pipeline, security hardening pass, SEO, settings module
 
 ## Tech stack
 
-**Frontend:** Next.js 15 (App Router), React 18, TypeScript, Tailwind, server components
+**Frontend:** Next.js 16 (App Router), React 19, TypeScript, Tailwind, server components
 **Engine:** FastAPI, Python 3.11, Vedic astronomy libraries
 **LLM:** OpenAI GPT-4o-mini, custom prompt scaffolding for chart grounding
 **Data:** Supabase (Postgres, Auth, Storage), Stripe (subscriptions)
@@ -136,4 +136,4 @@ Built by **Sadip Wagle** — AI Solutions Architect, formerly Co-Founder of **Da
 
 ---
 
-*Astra is part of a portfolio that also includes [KaraDarpan](https://github.com/wsadip-tech-ai/KaraDarpan) (tax AI), [Kaam](https://github.com/wsadip-tech-ai/Kaam) (home services), [WedMe](https://github.com/wsadip-tech-ai/WedMe) (event direct-booking), and [PartyPour](https://github.com/wsadip-tech-ai/PartyPour) (event beverage planning).*
+*Astra is part of a portfolio that also includes [Pasal AI](https://github.com/wsadip-tech-ai/pasal-ai) (Nepali DM-commerce AI), [Kaam](https://github.com/wsadip-tech-ai/Kaam) (home services), [WedMe](https://github.com/wsadip-tech-ai/WedMe) (event direct-booking), and [PartyPour](https://github.com/wsadip-tech-ai/PartyPour) (event beverage planning).*
