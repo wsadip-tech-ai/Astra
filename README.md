@@ -132,7 +132,7 @@ Built by **Sadip Wagle** — AI Solutions Architect, formerly Co-Founder of **Da
 
 - **LinkedIn:** [sadip-wagle](https://www.linkedin.com/in/sadip-wagle-711245b7/)
 - **GitHub:** [@wsadip-tech-ai](https://github.com/wsadip-tech-ai)
-- **Email:** wsadip@gmail.com
+- **Email:** waglesadip79@gmail.com
 
 ---
 
